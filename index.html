@@ -1,676 +1,469 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Área Superficial - Sólidos de Revolución</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-    <!-- CDN Three.js para visualización 3D -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- CDN Math.js para parsing de funciones matemáticas -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-    
-    <!--<style>
-        /* Reset y configuración general */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reembolsos RC - Continental Travel</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: #333;
-            min-height: 100vh;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #2d3748;
+      line-height: 1.6;
+      padding: 20px;
+    }
 
-        /* Contenedor principal con layout dividido */
-        .container {
-            display: flex;
-            min-height: 100vh;
-            gap: 20px;
-            padding: 20px;
-        }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
 
-        /* Panel izquierdo - Controles y resultados */
-        .controls-panel {
-            flex: 0 0 400px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            overflow-y: auto;
-            max-height: calc(100vh - 40px);
-        }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
 
-        /* Panel derecho - Visualización 3D */
-        .visualization-panel {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 15px;
-            backdrop-filter: blur(10px);
-        }
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #1a202c;
+      margin-bottom: 8px;
+    }
 
-        /* Títulos y texto */
-        h1 {
-            color: #2a5298;
-            margin-bottom: 10px;
-            font-size: 24px;
-            text-align: center;
-        }
+    .header p {
+      color: #718096;
+      font-size: 0.95rem;
+    }
 
-        p {
-            text-align: center;
-            color: #666;
-            margin-bottom: 25px;
-            font-style: italic;
-        }
+    .controls-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
 
-        /* Grupos de inputs */
-        .input-group {
-            margin-bottom: 20px;
-        }
+    .controls-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 20px;
+    }
 
-        .input-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+    .controls-grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 1fr 1fr;
+    }
 
-        .input-row .input-group {
-            flex: 1;
-            margin-bottom: 0;
-        }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
-        /* Labels */
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #2a5298;
-        }
+    .control-label {
+      font-weight: 500;
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
 
-        /* Inputs de texto y número */
-        input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
+    .control-input {
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
 
-        input[type="text"]:focus, input[type="number"]:focus {
-            outline: none;
-            border-color: #2a5298;
-            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
-        }
+    .control-input:focus {
+      outline: none;
+      border-color: #3182ce;
+    }
 
-        /* Texto pequeño de ayuda */
-        small {
-            display: block;
-            margin-top: 5px;
-            color: #888;
-            font-size: 12px;
-        }
+    .generate-btn {
+      padding: 8px 12px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
 
-        /* Grupo de botones principales */
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+    .generate-btn:hover {
+      background: #2c5282;
+    }
 
-        /* Botón principal de cálculo */
-        .calc-btn {
-            flex: 2;
-            padding: 15px;
-            background: linear-gradient(45deg, #2a5298, #1e3c72);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.3s;
-        }
+    .template-dropdown {
+      margin-bottom: 20px;
+    }
 
-        .calc-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(42, 82, 152, 0.3);
-        }
+    .dropdown-header {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        /* Botón de limpiar */
-        .clear-btn {
-            flex: 1;
-            padding: 15px;
-            background: linear-gradient(45deg, #dc3545, #c82333);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.3s;
-        }
+    .dropdown-header:hover {
+      border-color: #cbd5e0;
+    }
 
-        .clear-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
-        }
+    .dropdown-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2d3748;
+    }
 
-        /* Área de resultados */
-        .results {
-            margin: 25px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #2a5298;
-        }
+    .dropdown-arrow {
+      color: #718096;
+      transition: transform 0.2s;
+    }
 
-        .results h3 {
-            color: #2a5298;
-            margin-bottom: 15px;
-        }
+    .dropdown-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+    }
 
-        /* Displays de fórmula, cálculo y resultado */
-        .formula-display, .calc-display, .result-display {
-            margin: 10px 0;
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            border: 1px solid #eee;
-            min-height: 20px;
-        }
+    .dropdown-content.open {
+      max-height: 800px;
+    }
 
-        .result-display {
-            font-weight: bold;
-            font-size: 18px;
-            color: #2a5298;
-            text-align: center;
-        }
+    .dropdown-header.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
 
-        /* Sección de ejemplos */
-        .examples {
-            margin-top: 25px;
-        }
+    .templates-grid {
+      display: grid;
+      gap: 20px;
+      padding: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
 
-        .examples h4 {
-            color: #2a5298;
-            margin-bottom: 15px;
-        }
+    .template-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
 
-        /* Botones de ejemplo */
-        .example-btn {
-            margin: 5px;
-            padding: 8px 15px;
-            background: #e9ecef;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
+    .template-card:hover {
+      border-color: #cbd5e0;
+    }
 
-        .example-btn:hover {
-            background: #2a5298;
-            color: white;
-            transform: scale(1.05);
-        }
+    .template-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 12px;
+    }
 
-        /* Contenedor del canvas 3D */
-        .canvas-container {
-            position: relative;
-            width: 100%;
-            height: calc(100vh - 70px);
-            border-radius: 10px;
-            overflow: hidden;
-        }
+    .template-content {
+      background: #f7fafc;
+      border: 1px solid #edf2f7;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #2d3748;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      min-height: 120px;
+    }
 
-        /* Canvas 3D */
-        #canvas3d {
-            width: 100%;
-            height: 100%;
-            border-radius: 10px;
-            background: radial-gradient(circle, #1a1a2e, #16213e);
-        }
+    .copy-btn {
+      width: 100%;
+      padding: 8px 16px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
 
-        /* Overlay con instrucciones de controles */
-        .canvas-overlay {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            pointer-events: none;
-        }
+    .copy-btn:hover {
+      background: #2c5282;
+    }
 
-        .controls-hint {
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 12px;
-            backdrop-filter: blur(5px);
-        }
+    .copy-btn.copied {
+      background: #38a169;
+    }
 
-        /* Responsive - pantallas pequeñas */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                padding: 10px;
-            }
-            
-            .controls-panel {
-                flex: none;
-                max-height: none;
-            }
-            
-            .canvas-container {
-                height: 400px;
-            }
-        }
-    </style>-->
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #38a169;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transform: translateX(300px);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+      }
+
+      .header h1 {
+        font-size: 1.6rem;
+      }
+
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .templates-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .template-card {
+        padding: 16px;
+      }
+
+      .toast {
+        right: 16px;
+        left: 16px;
+        transform: translateY(-100px);
+      }
+
+      .toast.show {
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- Contenedor principal con layout dividido -->
-    <div class="container">
-        <!-- Panel izquierdo: controles y resultados -->
-        <div class="controls-panel">
-            <!-- Título y descripción -->
-            <h1>Calculadora de Área Superficial</h1>
-            <p>Sólidos de revolución alrededor del eje X</p>
-            
-            <!-- Campo para ingresar función f(x) -->
-            <div class="input-group">
-                <label for="function">Función f(x):</label>
-                <input type="text" id="function" placeholder="x^2" value="x">
-                <small>Ejemplos: x, x^2, sqrt(4-x^2), sin(x)+2</small>
-            </div>
-            
-            <!-- Campos para límites de integración a y b -->
-            <div class="input-row">
-                <div class="input-group">
-                    <label for="limitA">Límite a:</label>
-                    <input type="number" id="limitA" value="0" step="0.1">
-                </div>
-                <br>
-                <div class="input-group">
-                    <label for="limitB">Límite b:</label>
-                    <input type="number" id="limitB" value="3" step="0.1">
-                </div>
-            </div>
-            <br>
-            
-            <!-- Botones principales -->
-            <div class="button-group">
-                <button id="calculate" class="calc-btn">Calcular y Visualizar</button>
-                <button id="clear" class="clear-btn">Limpiar</button>
-            </div>
-            
-            <!-- Área de resultados del cálculo -->
-            <div id="results" class="results">
-                <h3>Resultados</h3>
-                <!-- Fórmula aplicada -->
-                <div id="formula" class="formula-display"></div>
-                <!-- Cálculo numérico paso a paso -->
-                <div id="calculation" class="calc-display"></div>
-                <!-- Resultado final del área -->
-                <div id="final-result" class="result-display"></div>
-            </div>
-            
-            <!-- Botones con ejemplos predefinidos -->
-            <div class="examples">
-                <h4>Ejemplos rápidos:</h4>
-                <!-- Cada botón tiene data attributes con función y límites -->
-                <button class="example-btn" data-func="x" data-a="0" data-b="3">Cono</button>
-                <button class="example-btn" data-func="x^2" data-a="0" data-b="2">Paraboloide</button>
-                <button class="example-btn" data-func="sqrt(4-x^2)" data-a="-2" data-b="2">Esfera</button>
-                <button class="example-btn" data-func="2" data-a="0" data-b="5">Cilindro</button>
-            </div>
-        </div>
-        
-        <!-- Panel derecho: visualización 3D -->
-        <div class="visualization-panel">
-            <div class="canvas-container">
-                <!-- Canvas donde se renderiza el sólido 3D -->
-                <canvas id="canvas3d"></canvas>
-                <!-- Overlay con instrucciones de controles -->
-                <div class="canvas-overlay">
-                    <div class="controls-hint">
-                        Mouse: Rotar | Scroll: Zoom | Click derecho: Pan
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>Sistema de Reembolsos RC</h1>
+      <p>Continental Travel - Plantillas de Solicitudes</p>
     </div>
-    
-    <!-- Script principal con toda la lógica -->
-    <script src="script.js"></script>
-    <!--<script>
-        // Variables globales para Three.js
-        let scene, camera, renderer, controls;
-        let currentSolid = null;
-        // Inicialización al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            initThreeJS();
-            setupEventListeners();
-            // Calcular ejemplo inicial
-            calculateAndVisualize();
-        });
-        // Configuración inicial de Three.js
-        function initThreeJS() {
-            const canvas = document.getElementById('canvas3d');
-            const container = canvas.parentElement;
-            
-            // Crear escena
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0a0a);
-            
-            // Configurar cámara
-            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(8, 5, 8);
-            
-            // Crear renderer
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            
-            // Configurar controles de cámara (OrbitControls simulado)
-            setupControls();
-            
-            // Añadir luces
-            setupLighting();
-            
-            // Añadir ejes de coordenadas
-            addAxes();
-            
-            // Manejar redimensionamiento
-            window.addEventListener('resize', onWindowResize);
-            
-            // Iniciar loop de renderizado
-            animate();
-        }
-        // Configurar controles de cámara (implementación básica)
-        function setupControls() {
-            let isMouseDown = false;
-            let mouseX = 0, mouseY = 0;
-            let targetX = 0, targetY = 0;
-            
-            const canvas = renderer.domElement;
-            
-            canvas.addEventListener('mousedown', (e) => {
-                isMouseDown = true;
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            });
-            
-            canvas.addEventListener('mousemove', (e) => {
-                if (!isMouseDown) return;
-                
-                const deltaX = e.clientX - mouseX;
-                const deltaY = e.clientY - mouseY;
-                
-                targetX += deltaX * 0.01;
-                targetY += deltaY * 0.01;
-                
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-                
-                // Rotar cámara alrededor del origen
-                const radius = camera.position.length();
-                camera.position.x = radius * Math.cos(targetX) * Math.cos(targetY);
-                camera.position.y = radius * Math.sin(targetY);
-                camera.position.z = radius * Math.sin(targetX) * Math.cos(targetY);
-                camera.lookAt(0, 0, 0);
-            });
-            
-            canvas.addEventListener('mouseup', () => isMouseDown = false);
-            
-            // Zoom con rueda del mouse
-            canvas.addEventListener('wheel', (e) => {
-                const zoomSpeed = 0.1;
-                const direction = e.deltaY > 0 ? 1 : -1;
-                camera.position.multiplyScalar(1 + direction * zoomSpeed);
-            });
-        }
-        // Configurar iluminación
-        function setupLighting() {
-            // Luz ambiental
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            scene.add(ambientLight);
-            
-            // Luz direccional principal
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(5, 10, 5);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
-            
-            // Luz de relleno
-            const fillLight = new THREE.DirectionalLight(0x4080ff, 0.3);
-            fillLight.position.set(-5, 5, -5);
-            scene.add(fillLight);
-        }
-        // Añadir ejes de coordenadas
-        function addAxes() {
-            const axesHelper = new THREE.AxesHelper(5);
-            scene.add(axesHelper);
-            
-            // Líneas de grilla en el plano XZ
-            const gridHelper = new THREE.GridHelper(10, 20, 0x444444, 0x222222);
-            scene.add(gridHelper);
-        }
-        // Configurar event listeners
-        function setupEventListeners() {
-            // Botón principal de cálculo
-            document.getElementById('calculate').addEventListener('click', calculateAndVisualize);
-            
-            // Botón de limpiar
-            document.getElementById('clear').addEventListener('click', clearAll);
-            
-            // Botones de ejemplos
-            document.querySelectorAll('.example-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.getElementById('function').value = this.dataset.func;
-                    document.getElementById('limitA').value = this.dataset.a;
-                    document.getElementById('limitB').value = this.dataset.b;
-                    calculateAndVisualize();
-                });
-            });
-            
-            // Enter en inputs
-            ['function', 'limitA', 'limitB'].forEach(id => {
-                document.getElementById(id).addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') calculateAndVisualize();
-                });
-            });
-        }
-        // Función principal de cálculo y visualización
-        function calculateAndVisualize() {
-            try {
-                // Obtener valores de entrada
-                const funcStr = document.getElementById('function').value.trim();
-                const a = parseFloat(document.getElementById('limitA').value);
-                const b = parseFloat(document.getElementById('limitB').value);
-                
-                // Validar entrada
-                if (!funcStr || isNaN(a) || isNaN(b) || a >= b) {
-                    throw new Error('Por favor ingresa una función válida y límites correctos (a < b)');
-                }
-                
-                // Compilar función con Math.js
-                const expr = math.compile(funcStr.replace(/\^/g, '^'));
-                const f = (x) => expr.evaluate({x: x});
-                
-                // Probar la función
-                f((a + b) / 2);
-                
-                // Calcular área superficial
-                const result = calculateSurfaceArea(f, a, b, funcStr);
-                
-                // Mostrar resultados
-                displayResults(result);
-                
-                // Generar y mostrar sólido 3D
-                generateSolid(f, a, b);
-                
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-        // Calcular área superficial usando integración numérica
-        function calculateSurfaceArea(f, a, b, funcStr) {
-            const n = 1000; // Número de subdivisiones
-            const h = (b - a) / n;
-            
-            // Calcular derivada numérica
-            const df = (x) => {
-                const dx = 0.0001;
-                return (f(x + dx) - f(x - dx)) / (2 * dx);
-            };
-            
-            // Integración por método del trapecio
-            let sum = 0;
-            for (let i = 0; i <= n; i++) {
-                const x = a + i * h;
-                const fx = f(x);
-                const dfx = df(x);
-                const integrand = fx * Math.sqrt(1 + dfx * dfx);
-                
-                if (i === 0 || i === n) {
-                    sum += integrand / 2;
-                } else {
-                    sum += integrand;
-                }
-            }
-            
-            const area = 2 * Math.PI * h * sum;
-            
-            return {
-                formula: `S = 2π ∫[${a},${b}] ${funcStr} √(1 + [f'(x)]²) dx`,
-                calculation: `Usando método del trapecio con ${n} subdivisiones`,
-                area: area
-            };
-        }
-        // Mostrar resultados en la interfaz
-        function displayResults(result) {
-            document.getElementById('formula').textContent = result.formula;
-            document.getElementById('calculation').textContent = result.calculation;
-            document.getElementById('final-result').textContent = `Área Superficial = ${result.area.toFixed(4)} unidades²`;
-        }
-        // Generar geometría 3D del sólido de revolución
-        function generateSolid(f, a, b) {
-            // Remover sólido anterior
-            if (currentSolid) {
-                scene.remove(currentSolid);
-                currentSolid = null;
-            }
-            
-            // Crear geometría del sólido de revolución
-            const segments = 64; // Resolución radial
-            const rings = 100; // Resolución axial
-            
-            const geometry = new THREE.BufferGeometry();
-            const vertices = [];
-            const indices = [];
-            const normals = [];
-            
-            // Generar vértices
-            for (let i = 0; i <= rings; i++) {
-                const x = a + (b - a) * i / rings;
-                const radius = Math.abs(f(x));
-                
-                for (let j = 0; j <= segments; j++) {
-                    const theta = 2 * Math.PI * j / segments;
-                    const y = radius * Math.cos(theta);
-                    const z = radius * Math.sin(theta);
-                    
-                    vertices.push(x, y, z);
-                    
-                    // Calcular normal aproximada
-                    const nx = 1;
-                    const ny = Math.cos(theta);
-                    const nz = Math.sin(theta);
-                    const len = Math.sqrt(nx*nx + ny*ny + nz*nz);
-                    normals.push(nx/len, ny/len, nz/len);
-                }
-            }
-            
-            // Generar índices para triángulos
-            for (let i = 0; i < rings; i++) {
-                for (let j = 0; j < segments; j++) {
-                    const a = i * (segments + 1) + j;
-                    const b = a + segments + 1;
-                    const c = a + 1;
-                    const d = b + 1;
-                    
-                    indices.push(a, b, c);
-                    indices.push(b, d, c);
-                }
-            }
-            
-            geometry.setIndex(indices);
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-            
-            // Crear material con gradiente
-            const material = new THREE.MeshPhongMaterial({
-                color: 0x4080ff,
-                shininess: 100,
-                transparent: true,
-                opacity: 0.9
-            });
-            
-            // Crear mesh y añadir a la escena
-            currentSolid = new THREE.Mesh(geometry, material);
-            currentSolid.castShadow = true;
-            currentSolid.receiveShadow = true;
-            scene.add(currentSolid);
-        }
-        // Limpiar todos los campos y resultados
-        function clearAll() {
-            // Limpiar campos de entrada
-            document.getElementById('function').value = '';
-            document.getElementById('limitA').value = '';
-            document.getElementById('limitB').value = '';
-            
-            // Limpiar resultados
-            document.getElementById('formula').textContent = '';
-            document.getElementById('calculation').textContent = '';
-            document.getElementById('final-result').textContent = '';
-            
-            // Remover sólido 3D
-            if (currentSolid) {
-                scene.remove(currentSolid);
-                currentSolid = null;
-            }
-            
-            // Focus en el campo de función
-            document.getElementById('function').focus();
-        }
-        // Mostrar error en la interfaz
-        function showError(message) {
-            document.getElementById('formula').textContent = 'Error:';
-            document.getElementById('calculation').textContent = message;
-            document.getElementById('final-result').textContent = '';
-        }
-        // Manejar redimensionamiento de ventana
-        function onWindowResize() {
-            const container = document.getElementById('canvas3d').parentElement;
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-        // Loop principal de renderizado
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Renderizar sin rotación automática
-            renderer.render(scene, camera);
-        }
-    </script>-->
+
+    <div class="controls-panel">
+      <div class="controls-title">Configuración de Plantillas</div>
+      <div class="controls-grid">
+        <div class="control-group">
+          <label class="control-label">Ruta de Vuelo</label>
+          <input 
+            type="text" 
+            id="rutaInput" 
+            class="control-input" 
+            placeholder="Ej: LIM-BOG, NYC-MIA"
+            value="LIM"
+          >
+        </div>
+        <div class="control-group">
+          <label class="control-label">Número CE2</label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input 
+              type="text" 
+              id="ce2Input" 
+              class="control-input" 
+              placeholder="Número de 7 dígitos"
+              maxlength="7"
+              style="flex: 1;"
+              readonly
+            >
+            <button class="generate-btn" onclick="generarCE2()" title="Generar nuevo número">
+              🎲 Generar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="template-dropdown">
+      <div class="dropdown-header" onclick="toggleDropdown()">
+        <div class="dropdown-title">Plantillas Disponibles</div>
+        <div class="dropdown-arrow">▼</div>
+      </div>
+      <div class="dropdown-content" id="dropdownContent">
+        <div class="templates-grid">
+          <div class="template-card">
+            <div class="template-title">Reembolso Completo</div>
+            <div class="template-content" id="template1"></div>
+            <button class="copy-btn" onclick="copiarTexto('template1', this)">
+              📋 Copiar Plantilla
+            </button>
+          </div>
+
+          <div class="template-card">
+            <div class="template-title">Reembolso Estándar</div>
+            <div class="template-content" id="template2"></div>
+            <button class="copy-btn" onclick="copiarTexto('template2', this)">
+              📋 Copiar Plantilla
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    Texto copiado al portapapeles
+  </div>
+
+  <script>
+    let isDropdownOpen = false;
+
+    // Generar número CE2 aleatorio al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      generarCE2();
+      actualizarPlantillas();
+      
+      // Actualizar plantillas cuando cambie la ruta
+      document.getElementById('rutaInput').addEventListener('input', actualizarPlantillas);
+    });
+
+    function generarCE2() {
+      let numero;
+      do {
+        // Generar número aleatorio de 7 dígitos
+        numero = Math.floor(Math.random() * 9000000) + 1000000;
+      } while (numero.toString().startsWith('2'));
+      
+      document.getElementById('ce2Input').value = numero;
+      actualizarPlantillas();
+    }
+
+    function actualizarPlantillas() {
+      const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
+      const ce2 = document.getElementById('ce2Input').value;
+
+      const template1Content = `RC REFUND
+SE SOLICITA REEMBOLSO DE IMPUESTOS.
+RUTA: ${ruta}
+REEMBOLSO SOLO TAXAS - NO SE ENVIA NOTA DE CREDITO.
+DATOS/CE2${ce2}
+soportereembolsos@ContinentalTravel.com.pe`;
+
+      const template2Content = `SE SOLICITA REEMBOLSO DE IMPUESTOS.
+RUTA: ${ruta}
+REEMBOLSO SOLO TAXAS - NO SE ENVIA NOTA DE CREDITO.
+DATOS/CE2${ce2}
+soportereembolsos@ContinentalTravel.com.pe`;
+
+      document.getElementById('template1').textContent = template1Content;
+      document.getElementById('template2').textContent = template2Content;
+    }
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById('dropdownContent');
+      const header = document.querySelector('.dropdown-header');
+      
+      isDropdownOpen = !isDropdownOpen;
+      
+      if (isDropdownOpen) {
+        dropdown.classList.add('open');
+        header.classList.add('open');
+      } else {
+        dropdown.classList.remove('open');
+        header.classList.remove('open');
+      }
+    }
+
+    function copiarTexto(templateId, button) {
+      const texto = document.getElementById(templateId).textContent;
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(texto)
+          .then(() => {
+            mostrarNotificacion();
+            animarBoton(button);
+            generarCE2(); // Generar nuevo número después de copiar
+          })
+          .catch(() => {
+            copiarTextoFallback(texto, button);
+          });
+      } else {
+        copiarTextoFallback(texto, button);
+      }
+    }
+
+    function copiarTextoFallback(texto, button) {
+      const textArea = document.createElement('textarea');
+      textArea.value = texto;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        mostrarNotificacion();
+        animarBoton(button);
+        generarCE2(); // Generar nuevo número después de copiar
+      } catch (err) {
+        console.error('Error al copiar:', err);
+        alert('Error al copiar el texto. Por favor, cópialo manualmente.');
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+
+    function mostrarNotificacion() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function animarBoton(button) {
+      const textoOriginal = button.innerHTML;
+      button.innerHTML = '✓ ¡Copiado!';
+      button.classList.add('copied');
+      
+      setTimeout(() => {
+        button.innerHTML = textoOriginal;
+        button.classList.remove('copied');
+      }, 2000);
+    }
+
+    // Prevenir zoom en dispositivos móviles
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+  </script>
 </body>
 </html>
