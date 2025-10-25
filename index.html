@@ -225,7 +225,6 @@
       background: #38a169;
     }
 
-    /* Tasas Panel */
     .tasas-panel {
       background: white;
       border: 1px solid #e2e8f0;
@@ -549,7 +548,6 @@
       
       document.getElementById('rutaInput').addEventListener('input', actualizarPlantillas);
       
-      // Enter para agregar tasa
       document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
           agregarTasa();
@@ -557,11 +555,11 @@
       });
     });
 
-    async function cargarTasas() {
+    function cargarTasas() {
       try {
-        const result = await window.storage.get('tasas-guardadas');
-        if (result && result.value) {
-          tasas = JSON.parse(result.value);
+        const tasasGuardadas = localStorage.getItem('tasas-guardadas');
+        if (tasasGuardadas) {
+          tasas = JSON.parse(tasasGuardadas);
           renderizarTasas();
         }
       } catch (error) {
@@ -569,11 +567,12 @@
       }
     }
 
-    async function guardarTasas() {
+    function guardarTasas() {
       try {
-        await window.storage.set('tasas-guardadas', JSON.stringify(tasas));
+        localStorage.setItem('tasas-guardadas', JSON.stringify(tasas));
       } catch (error) {
         console.error('Error al guardar tasas:', error);
+        mostrarNotificacion('Error al guardar. Verifica el almacenamiento del navegador.');
       }
     }
 
