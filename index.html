@@ -610,12 +610,12 @@
     }
 
     function usarTasa(tasa) {
-      const texto = `${tasa.nombre}: $${tasa.monto.toFixed(2)}`;
+      const texto = tasa.monto.toFixed(2);
       
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(texto)
           .then(() => {
-            mostrarNotificacion('Tasa copiada al portapapeles');
+            mostrarNotificacion('Monto copiado: $' + texto);
           })
           .catch(() => {
             copiarTextoFallback(texto);
@@ -645,7 +645,7 @@
             <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
           </div>
           <div class="tasa-actions">
-            <button class="use-btn" onclick="usarTasa(${JSON.stringify(tasa).replace(/"/g, '&quot;')})">
+            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})'>
               📋 Usar
             </button>
             <button class="delete-btn" onclick="eliminarTasa(${tasa.id})">
