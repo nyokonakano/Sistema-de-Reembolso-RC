@@ -645,10 +645,10 @@
             <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
           </div>
           <div class="tasa-actions">
-            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})'>
+            <button class="use-btn" onclick='usarTasa (${JSON.stringify(tasa)})' value="Copiar">
               📄
             </button>
-            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})">
+            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})" value="Eliminar">
               🗑️
             </button>
           </div>
@@ -777,3 +777,4 @@ soportereembolsos@ContinentalTravel.com.pe`;
   </script>
 </body>
 </html>
+
