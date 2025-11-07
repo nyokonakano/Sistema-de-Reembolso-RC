@@ -446,7 +446,7 @@
                 id="rutaInput" 
                 class="control-input" 
                 placeholder="Ej: LIM-BOG, NYC-MIA"
-                value="LIM"
+                value=""
               >
             </div>
             <div class="control-group">
@@ -462,7 +462,7 @@
                   readonly
                 >
                 <button class="generate-btn" onclick="generarCE2()" title="Generar nuevo número">
-                  🎲 Generar
+                  Generar
                 </button>
               </div>
             </div>
@@ -480,7 +480,7 @@
                 <div class="template-title">Reembolso Completo</div>
                 <div class="template-content" id="template1"></div>
                 <button class="copy-btn" onclick="copiarTexto('template1', this)">
-                  📋 Copiar Plantilla
+                  Copiar Plantilla
                 </button>
               </div>
 
@@ -488,7 +488,7 @@
                 <div class="template-title">Reembolso Estándar</div>
                 <div class="template-content" id="template2"></div>
                 <button class="copy-btn" onclick="copiarTexto('template2', this)">
-                  📋 Copiar Plantilla
+                  Copiar Plantilla
                 </button>
               </div>
             </div>
@@ -518,7 +518,7 @@
               >
             </div>
             <button class="add-btn" onclick="agregarTasa()">
-              ➕ Agregar Tasa
+              Agregar Tasa
             </button>
           </div>
 
@@ -646,7 +646,7 @@
           </div>
           <div class="tasa-actions">
             <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})'>
-              📋 Usar
+              📄
             </button>
             <button class="delete-btn" onclick="eliminarTasa(${tasa.id})">
               🗑️
