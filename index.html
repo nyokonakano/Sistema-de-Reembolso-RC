@@ -286,6 +286,67 @@
       background: #38a169;
     }
 
+    .suma-total {
+      background: #edf2f7;
+      border: 2px solid #3182ce;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .suma-label {
+      font-size: 0.9rem;
+      color: #4a5568;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .suma-monto {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #3182ce;
+    }
+
+    .suma-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .copiar-suma-btn {
+      padding: 8px 16px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copiar-suma-btn:hover {
+      background: #2c5282;
+    }
+
+    .limpiar-seleccion-btn {
+      padding: 8px 16px;
+      background: #718096;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .limpiar-seleccion-btn:hover {
+      background: #4a5568;
+    }
+
     .tasas-list {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -303,11 +364,20 @@
       justify-content: space-between;
       align-items: center;
       transition: all 0.2s;
+      gap: 12px;
     }
 
     .tasa-item:hover {
       border-color: #cbd5e0;
       background: #edf2f7;
+    }
+
+    .tasa-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #3182ce;
+      flex-shrink: 0;
     }
 
     .tasa-info {
@@ -330,6 +400,7 @@
     .tasa-actions {
       display: flex;
       gap: 8px;
+      flex-shrink: 0;
     }
 
     .use-btn {
@@ -413,6 +484,10 @@
 
       .tasas-list {
         grid-template-columns: 1fr;
+      }
+
+      .suma-actions {
+        flex-direction: column;
       }
 
       .toast {
@@ -522,6 +597,19 @@
             </button>
           </div>
 
+          <div class="suma-total" id="sumaTotal" style="display: none;">
+            <div class="suma-label">Total Seleccionado</div>
+            <div class="suma-monto" id="sumaMonto">$0.00</div>
+            <div class="suma-actions">
+              <button class="copiar-suma-btn" onclick="copiarSuma()">
+                📋 Copiar Total
+              </button>
+              <button class="limpiar-seleccion-btn" onclick="limpiarSeleccion()">
+                ✕ Limpiar
+              </button>
+            </div>
+          </div>
+
           <div class="tasas-list" id="tasasList">
             <div class="empty-state">
               <p>No hay tasas guardadas</p>
@@ -540,6 +628,7 @@
   <script>
     let isDropdownOpen = false;
     let tasas = [];
+    let tasasSeleccionadas = new Set();
 
     document.addEventListener('DOMContentLoaded', function() {
       cargarTasas();
@@ -604,9 +693,64 @@
 
     function eliminarTasa(id) {
       tasas = tasas.filter(t => t.id !== id);
+      tasasSeleccionadas.delete(id);
       guardarTasas();
       renderizarTasas();
+      actualizarSuma();
       mostrarNotificacion('Tasa eliminada');
+    }
+
+    function toggleSeleccionTasa(id) {
+      if (tasasSeleccionadas.has(id)) {
+        tasasSeleccionadas.delete(id);
+      } else {
+        tasasSeleccionadas.add(id);
+      }
+      actualizarSuma();
+    }
+
+    function actualizarSuma() {
+      const sumaPanel = document.getElementById('sumaTotal');
+      const sumaMonto = document.getElementById('sumaMonto');
+      
+      let total = 0;
+      tasasSeleccionadas.forEach(id => {
+        const tasa = tasas.find(t => t.id === id);
+        if (tasa) {
+          total += tasa.monto;
+        }
+      });
+
+      sumaMonto.textContent = '$' + total.toFixed(2);
+      
+      if (tasasSeleccionadas.size > 0) {
+        sumaPanel.style.display = 'block';
+      } else {
+        sumaPanel.style.display = 'none';
+      }
+    }
+
+    function copiarSuma() {
+      const sumaMonto = document.getElementById('sumaMonto').textContent.replace('$', '');
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(sumaMonto)
+          .then(() => {
+            mostrarNotificacion('Total copiado: $' + sumaMonto);
+          })
+          .catch(() => {
+            copiarTextoFallback(sumaMonto);
+          });
+      } else {
+        copiarTextoFallback(sumaMonto);
+      }
+    }
+
+    function limpiarSeleccion() {
+      tasasSeleccionadas.clear();
+      renderizarTasas();
+      actualizarSuma();
+      mostrarNotificacion('Selección limpiada');
     }
 
     function usarTasa(tasa) {
@@ -640,15 +784,21 @@
 
       lista.innerHTML = tasas.map(tasa => `
         <div class="tasa-item">
+          <input 
+            type="checkbox" 
+            class="tasa-checkbox" 
+            ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''}
+            onchange="toggleSeleccionTasa(${tasa.id})"
+          >
           <div class="tasa-info">
             <div class="tasa-nombre">${tasa.nombre}</div>
             <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
           </div>
           <div class="tasa-actions">
-            <button class="use-btn" onclick='usarTasa (${JSON.stringify(tasa)})' value="Copiar">
+            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">
               📄
             </button>
-            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})" value="Eliminar">
+            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})" title="Eliminar">
               🗑️
             </button>
           </div>
@@ -777,4 +927,3 @@ soportereembolsos@ContinentalTravel.com.pe`;
   </script>
 </body>
 </html>
-
