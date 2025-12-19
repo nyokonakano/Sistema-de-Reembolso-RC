@@ -1066,6 +1066,7 @@ soportereembolsos@ContinentalTravel.com.pe`,
     document.addEventListener('DOMContentLoaded', function(){
       cargarPeriodos();
       cargarTasas();
+      migrarTasasAntiguasAPeriodos();
       cargarPlantillasPersonalizadas();
       cargarTiposPlantilla();
       generarCE2();
@@ -1477,6 +1478,33 @@ soportereembolsos@ContinentalTravel.com.pe`,
       }
     }
 
+function migrarTasasAntiguasAPeriodos() {
+  try {
+    const tasasGuardadas = localStorage.getItem('tasas-guardadas');
+    if (tasasGuardadas) {
+      let tasasParsed = JSON.parse(tasasGuardadas);
+      let necesitaMigracion = false;
+      
+      // Verificar si hay tasas sin periodo
+      tasasParsed = tasasParsed.map(tasa => {
+        if (!tasa.periodo) {
+          necesitaMigracion = true;
+          return { ...tasa, periodo: periodoActual };
+        }
+        return tasa;
+      });
+      
+      if (necesitaMigracion) {
+        tasas = tasasParsed;
+        guardarTasas();
+        console.log('Tasas migradas a sistema de períodos');
+      }
+    }
+  } catch (error) {
+    console.error('Error al migrar tasas:', error);
+  }
+}
+    
     function guardarTasas() {
       try {
         localStorage.setItem('tasas-guardadas', JSON.stringify(tasas));
