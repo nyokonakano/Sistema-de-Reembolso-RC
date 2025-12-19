@@ -1097,9 +1097,18 @@ soportereembolsos@ContinentalTravel.com.pe`,
         const periodosGuardados = localStorage.getItem('periodos-tasas');
         if (periodosGuardados) {
           periodos = JSON.parse(periodosGuardados);
+        } else {
+          // Si no hay períodos guardados, crear el año actual
+          const anioActual = new Date().getFullYear();
+          periodos = [anioActual];
+          periodoActual = anioActual;
+          guardarPeriodos();
         }
       } catch (error) {
         console.log('Usando períodos predeterminados');
+        const anioActual = new Date().getFullYear();
+        periodos = [anioActual];
+        periodoActual = anioActual;
       }
     }
 
@@ -1784,4 +1793,5 @@ function migrarTasasAntiguasAPeriodos() {
   </script>
 </body>
 </html>
+
 
