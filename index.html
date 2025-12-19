@@ -784,9 +784,9 @@
     </div>
 
     <div class="tabs">
-      <button class="tab active" onclick="cambiarTab('plantillas')">📋 Plantillas</button>
-      <button class="tab" onclick="cambiarTab('tasas')">💰 Tasas</button>
-      <button class="tab" onclick="cambiarTab('crear')">➕ Crear Plantilla</button>
+      <button class="tab active" onclick="cambiarTab('plantillas')">Plantillas</button>
+      <button class="tab" onclick="cambiarTab('tasas')">Tasas</button>
+      <button class="tab" onclick="cambiarTab('crear')">Crear Plantilla</button>
     </div>
 
     <div class="main-grid">
@@ -802,7 +802,7 @@
                   type="text" 
                   id="rutaInput" 
                   class="control-input" 
-                  placeholder="Ej: LIM-BOG"
+                  placeholder="Ingresar ruta"
                   value=""
                 >
               </div>
@@ -849,7 +849,7 @@
             <div class="periodo-selector">
               <div id="periodoButtons" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
               <button class="add-periodo-btn" onclick="abrirModalPeriodo()">
-                ➕ Año
+                Año
               </button>
             </div>
           </div>
@@ -941,13 +941,13 @@
           </div>
 
           <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 16px; margin-top: 16px;">
-            <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">💡 Tipos de Plantilla Disponibles:</div>
+            <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Tipos de Plantilla Disponibles:</div>
             <div class="tipo-tags" style="margin-bottom: 12px;">
               <button class="tipo-tag" onclick="editarTipos()">Reembolso</button>
               <button class="tipo-tag" onclick="editarTipos()">Reenvío</button>
               <button class="tipo-tag" onclick="editarTipos()">Waiver</button>
               <button class="tipo-tag" onclick="editarTipos()" style="background: #edf2f7; border: 1px dashed #cbd5e0;">
-                ➕ Editar Tipos
+                Editar Tipos
               </button>
             </div>
             <div style="font-size: 0.85rem; color: #718096;">
@@ -1018,7 +1018,7 @@
       </div>
       <div class="add-tasa-form">
         <div class="form-row" style="grid-template-columns: 1fr;">
-          <input type="number" id="nuevoPeriodoInput" class="form-input" placeholder="Ej: 2025" min="2000" max="2100">
+          <input type="number" id="nuevoPeriodoInput" class="form-input" placeholder="Agregar año" min="2000" max="2100">
         </div>
         <button class="add-btn" onclick="agregarPeriodo()">Agregar Año</button>
       </div>
@@ -1543,17 +1543,17 @@ soportereembolsos@ContinentalTravel.com.pe`,
         }
       });
 
-      sumaMonto.textContent = ' + total.toFixed(2);
+      sumaMonto.textContent = '' + total.toFixed(2);
       
       sumaPanel.style.display = tasasSeleccionadas.size > 0 ? 'block' : 'none';
     }
 
     function copiarSuma() {
-      const sumaMonto = document.getElementById('sumaMonto').textContent.replace(', '');
+      const sumaMonto = document.getElementById('sumaMonto').textContent.replace(',','');
       
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(sumaMonto)
-          .then(() => mostrarNotificacion('Total copiado:  + sumaMonto))
+          .then(() => mostrarNotificacion('Total copiado: ' + sumaMonto))
           .catch(() => copiarTextoFallback(sumaMonto));
       } else {
         copiarTextoFallback(sumaMonto);
@@ -1572,8 +1572,7 @@ soportereembolsos@ContinentalTravel.com.pe`,
       
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(texto)
-          .then(() => mostrarNotificacion('Monto copiado:  + texto))
-          .catch(() => copiarTextoFallback(texto));
+          .then(() => mostrarNotificacion('Monto copiado: ' + texto)).catch(() => copiarTextoFallback(texto));
       } else {
         copiarTextoFallback(texto);
       }
