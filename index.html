@@ -1470,8 +1470,22 @@ soportereembolsos@ContinentalTravel.com.pe`,
       try {
         const tasasGuardadas = localStorage.getItem('tasas-guardadas');
         if (tasasGuardadas) {
-          tasas = JSON.parse(tasasGuardadas);
+          let tasasParsed = JSON.parse(tasasGuardadas);
+          
+          // Agregar periodo a tasas antiguas
+          tasas = tasasParsed.map(tasa => {
+            if (!tasa.periodo) {
+              // Si la tasa no tiene periodo, asignarle el periodo actual
+              return { ...tasa, periodo: periodoActual };
+            }
+            return tasa;
+          });
+          
+          // Guardar las tasas migradas
+          guardarTasas();
           renderizarTasas();
+          
+          console.log('Tasas cargadas:', tasas.length);
         }
       } catch (error) {
         console.log('No hay tasas guardadas');
@@ -1619,7 +1633,7 @@ function migrarTasasAntiguasAPeriodos() {
         `;
         return;
       }
-
+    
       lista.innerHTML = tasasDelPeriodo.map(tasa => `
         <div class="tasa-item">
           <input 
@@ -1630,11 +1644,12 @@ function migrarTasasAntiguasAPeriodos() {
           >
           <div class="tasa-info">
             <div class="tasa-nombre">${tasa.nombre}</div>
-            <div class="tasa-monto">${tasa.monto.toFixed(2)}</div>
+            <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
           </div>
           <div class="tasa-actions">
-            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})'>📄</button>
-            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})">🗑️</button>
+            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">📄</button>
+            <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
+            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})" title="Eliminar">🗑️</button>
           </div>
         </div>
       `).join('');
@@ -1691,6 +1706,82 @@ function migrarTasasAntiguasAPeriodos() {
       
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
+    
+    //editar periodo de las tasas 
+    function abrirModalEditarTasa(tasa) {
+      const modal = document.createElement('div');
+      modal.className = 'modal show';
+      modal.id = 'modalEditarTasa';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <div class="modal-title">Editar Tasa</div>
+            <button class="modal-close" onclick="cerrarModalEditarTasa()">×</button>
+          </div>
+          <div class="add-tasa-form">
+            <div class="form-row" style="grid-template-columns: 1fr;">
+              <input 
+                type="text" 
+                id="editNombreTasa" 
+                class="form-input" 
+                placeholder="Nombre de la tasa"
+                value="${tasa.nombre}"
+              >
+            </div>
+            <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+              <input 
+                type="number" 
+                id="editMontoTasa" 
+                class="form-input" 
+                placeholder="Monto ($)"
+                step="0.01"
+                value="${tasa.monto}"
+              >
+              <select id="editPeriodoTasa" class="form-input">
+                ${periodos.map(p => `<option value="${p}" ${p === tasa.periodo ? 'selected' : ''}>${p}</option>`).join('')}
+              </select>
+            </div>
+            <button class="add-btn" onclick="guardarEdicionTasa(${tasa.id})">
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    
+    function cerrarModalEditarTasa() {
+      const modal = document.getElementById('modalEditarTasa');
+      if (modal) {
+        modal.remove();
+      }
+    }
+    
+    function guardarEdicionTasa(id) {
+      const nombre = document.getElementById('editNombreTasa').value.trim();
+      const monto = parseFloat(document.getElementById('editMontoTasa').value);
+      const periodo = parseInt(document.getElementById('editPeriodoTasa').value);
+      
+      if (!nombre || !monto) {
+        mostrarNotificacion('Completa todos los campos');
+        return;
+      }
+      
+      const index = tasas.findIndex(t => t.id === id);
+      if (index !== -1) {
+        tasas[index] = {
+          ...tasas[index],
+          nombre: nombre,
+          monto: monto,
+          periodo: periodo
+        };
+        guardarTasas();
+        renderizarTasas();
+        cerrarModalEditarTasa();
+        mostrarNotificacion('Tasa actualizada');
+      }
+    }
   </script>
 </body>
 </html>
+
