@@ -1,1522 +1,1669 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reembolsos RC - Continental Travel</title>
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #f8f9fa;
-    color: #2d3748;
-    line-height: 1.6;
-    padding: 20px;
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
-
-  .header h1 {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: #1a202c;
-    margin-bottom: 8px;
-  }
-
-  .header p {
-    color: #718096;
-    font-size: 0.95rem;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    border-bottom: 2px solid #e2e8f0;
-  }
-
-  .tab {
-    padding: 12px 24px;
-    background: transparent;
-    border: none;
-    color: #718096;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
-    position: relative;
-    bottom: -2px;
-  }
-
-  .tab:hover {
-    color: #3182ce;
-  }
-
-  .tab.active {
-    color: #3182ce;
-    border-bottom-color: #3182ce;
-  }
-
-  .tab-content {
-    display: none;
-  }
-
-  .tab-content.active {
-    display: block;
-  }
-
-  .main-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .left-column {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    width: 100%;
-  }
-
-  .controls-panel {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 24px;
-  }
-
-  .controls-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #2d3748;
-    margin-bottom: 20px;
-  }
-
-  .controls-grid {
-    display: grid;
-    gap: 20px;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .control-label {
-    font-weight: 500;
-    color: #4a5568;
-    font-size: 0.9rem;
-  }
-
-  .control-input {
-    padding: 8px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    font-size: 0.95rem;
-    transition: border-color 0.2s;
-  }
-
-  .control-input:focus {
-    outline: none;
-    border-color: #3182ce;
-  }
-
-  .generate-btn {
-    padding: 8px 12px;
-    background: #3182ce;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
-  }
-
-  .generate-btn:hover {
-    background: #2c5282;
-  }
-
-  .template-dropdown {
-    margin-bottom: 20px;
-  }
-
-  .dropdown-header {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 16px 20px;
-    cursor: pointer;
-    transition: border-color 0.2s;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .dropdown-header:hover {
-    border-color: #cbd5e0;
-  }
-
-  .dropdown-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #2d3748;
-  }
-
-  .dropdown-arrow {
-    color: #718096;
-    transition: transform 0.2s;
-  }
-
-  .dropdown-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-top: none;
-    border-radius: 0 0 6px 6px;
-  }
-
-  .dropdown-content.open {
-    max-height: 2000px;
-  }
-
-  .dropdown-header.open .dropdown-arrow {
-    transform: rotate(180deg);
-  }
-
-  .templates-grid {
-    display: grid;
-    gap: 20px;
-    padding: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-
-  .template-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 20px;
-    transition: border-color 0.2s;
-    position: relative;
-  }
-
-  .template-card:hover {
-    border-color: #cbd5e0;
-  }
-
-  .template-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-    gap: 12px;
-  }
-
-  .template-title-wrapper {
-    flex: 1;
-  }
-
-  .template-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #2d3748;
-    margin-bottom: 4px;
-  }
-
-  .template-type {
-    display: inline-block;
-    padding: 4px 8px;
-    background: #edf2f7;
-    color: #4a5568;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-
-  .template-type.reembolso {
-    background: #bee3f8;
-    color: #2c5282;
-  }
-
-  .template-type.reenvio {
-    background: #c6f6d5;
-    color: #276749;
-  }
-
-  .template-type.waiver {
-    background: #fed7d7;
-    color: #742a2a;
-  }
-
-  .template-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .edit-template-btn {
-    padding: 4px 8px;
-    background: #edf2f7;
-    border: none;
-    color: #4a5568;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .edit-template-btn:hover {
-    background: #e2e8f0;
-  }
-
-  .delete-template-btn {
-    padding: 4px 8px;
-    background: #fed7d7;
-    border: none;
-    color: #742a2a;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .delete-template-btn:hover {
-    background: #fc8181;
-    color: white;
-  }
-
-  .template-content {
-    background: #f7fafc;
-    border: 1px solid #edf2f7;
-    border-radius: 4px;
-    padding: 12px;
-    margin-bottom: 12px;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: #2d3748;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    min-height: 120px;
-  }
-
-  .copy-btn {
-    width: 100%;
-    padding: 8px 16px;
-    background: #3182ce;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .copy-btn:hover {
-    background: #2c5282;
-  }
-
-  .copy-btn.copied {
-    background: #38a169;
-  }
-
-  .tasas-panel {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 24px;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
-  .tasas-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-
-  .add-tasa-form {
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .form-row {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: 2fr 1fr;
-    margin-bottom: 12px;
-  }
-
-  .form-input {
-    padding: 8px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    font-size: 0.9rem;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: #3182ce;
-  }
-
-  select.form-input {
-    cursor: pointer;
-  }
-
-  .add-btn {
-    width: 100%;
-    padding: 8px 16px;
-    background: #48bb78;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .add-btn:hover {
-    background: #38a169;
-  }
-
-  .suma-total {
-    background: #edf2f7;
-    border: 2px solid #3182ce;
-    border-radius: 6px;
-    padding: 16px;
-    margin-bottom: 16px;
-    text-align: center;
-  }
-
-  .suma-label {
-    font-size: 0.9rem;
-    color: #4a5568;
-    margin-bottom: 8px;
-    font-weight: 500;
-  }
-
-  .suma-monto {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #3182ce;
-  }
-
-  .suma-actions {
-    margin-top: 12px;
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-  }
-
-  .copiar-suma-btn {
-    padding: 8px 16px;
-    background: #3182ce;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .copiar-suma-btn:hover {
-    background: #2c5282;
-  }
-
-  .limpiar-seleccion-btn {
-    padding: 8px 16px;
-    background: #718096;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .limpiar-seleccion-btn:hover {
-    background: #4a5568;
-  }
-
-  .tasas-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-    max-height: none;
-    overflow-y: visible;
-  }
-
-  .tasa-item {
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    padding: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.2s;
-    gap: 12px;
-  }
-
-  .tasa-item:hover {
-    border-color: #cbd5e0;
-    background: #edf2f7;
-  }
-
-  .tasa-checkbox {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: #3182ce;
-    flex-shrink: 0;
-  }
-
-  .tasa-info {
-    flex: 1;
-  }
-
-  .tasa-nombre {
-    font-weight: 600;
-    color: #2d3748;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-  }
-
-  .tasa-monto {
-    color: #48bb78;
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .tasa-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  .use-btn {
-    padding: 6px 12px;
-    background: #3182ce;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .use-btn:hover {
-    background: #2c5282;
-  }
-
-  .delete-btn {
-    padding: 6px 10px;
-    background: #e53e3e;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .delete-btn:hover {
-    background: #c53030;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: #718096;
-    grid-column: 1 / -1;
-  }
-
-  .toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #38a169;
-    color: white;
-    padding: 12px 16px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    transform: translateX(300px);
-    transition: transform 0.3s ease;
-    z-index: 1000;
-  }
-
-  .toast.show {
-    transform: translateX(0);
-  }
-
-  .modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  .modal.show {
-    display: flex;
-  }
-
-  .modal-content {
-    background: white;
-    border-radius: 8px;
-    padding: 24px;
-    max-width: 600px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-
-  .modal-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #2d3748;
-  }
-
-  .modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: #718096;
-    cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: background 0.2s;
-  }
-
-  .modal-close:hover {
-    background: #edf2f7;
-  }
-
-  .tipo-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  .tipo-tag {
-    padding: 6px 12px;
-    background: #edf2f7;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .tipo-tag:hover {
-    background: #e2e8f0;
-  }
-
-  .tipo-tag.selected {
-    background: #3182ce;
-    color: white;
-  }
-
-  @media (max-width: 1024px) {
-    .tasas-list {
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reembolsos RC - Continental Travel</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-  }
 
-  @media (max-width: 768px) {
     body {
-      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #2d3748;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
     }
 
     .header h1 {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #1a202c;
+      margin-bottom: 8px;
     }
 
-    .controls-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .form-row {
-      grid-template-columns: 1fr;
-    }
-
-    .tasas-list {
-      grid-template-columns: 1fr;
-    }
-
-    .suma-actions {
-      flex-direction: column;
-    }
-
-    .toast {
-      right: 16px;
-      left: 16px;
-      transform: translateY(-100px);
-    }
-
-    .toast.show {
-      transform: translateY(0);
+    .header p {
+      color: #718096;
+      font-size: 0.95rem;
     }
 
     .tabs {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e2e8f0;
     }
 
     .tab {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      color: #718096;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      bottom: -2px;
+    }
+
+    .tab:hover {
+      color: #3182ce;
+    }
+
+    .tab.active {
+      color: #3182ce;
+      border-bottom-color: #3182ce;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+    }
+
+    .controls-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 24px;
+    }
+
+    .controls-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 20px;
+    }
+
+    .controls-grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-weight: 500;
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
+
+    .control-input {
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    .control-input:focus {
+      outline: none;
+      border-color: #3182ce;
+    }
+
+    .generate-btn {
+      padding: 8px 12px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
       white-space: nowrap;
     }
-  }
-</style>
+
+    .generate-btn:hover {
+      background: #2c5282;
+    }
+
+    .template-dropdown {
+      margin-bottom: 20px;
+    }
+
+    .dropdown-header {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dropdown-header:hover {
+      border-color: #cbd5e0;
+    }
+
+    .dropdown-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .dropdown-arrow {
+      color: #718096;
+      transition: transform 0.2s;
+    }
+
+    .dropdown-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+    }
+
+    .dropdown-content.open {
+      max-height: 2000px;
+    }
+
+    .dropdown-header.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+
+    .templates-grid {
+      display: grid;
+      gap: 20px;
+      padding: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .template-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 20px;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+
+    .template-card:hover {
+      border-color: #cbd5e0;
+    }
+
+    .template-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .template-title-wrapper {
+      flex: 1;
+    }
+
+    .template-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 4px;
+    }
+
+    .template-type {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #edf2f7;
+      color: #4a5568;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .template-type.reembolso {
+      background: #bee3f8;
+      color: #2c5282;
+    }
+
+    .template-type.reenvio {
+      background: #c6f6d5;
+      color: #276749;
+    }
+
+    .template-type.waiver {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .template-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .edit-template-btn {
+      padding: 4px 8px;
+      background: #edf2f7;
+      border: none;
+      color: #4a5568;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .edit-template-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .delete-template-btn {
+      padding: 4px 8px;
+      background: #fed7d7;
+      border: none;
+      color: #742a2a;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .delete-template-btn:hover {
+      background: #fc8181;
+      color: white;
+    }
+
+    .template-content {
+      background: #f7fafc;
+      border: 1px solid #edf2f7;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #2d3748;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      min-height: 120px;
+    }
+
+    .copy-btn {
+      width: 100%;
+      padding: 8px 16px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #2c5282;
+    }
+
+    .copy-btn.copied {
+      background: #38a169;
+    }
+
+    .tasas-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 24px;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .tasas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .periodo-selector {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .periodo-btn {
+      padding: 6px 16px;
+      background: #edf2f7;
+      border: 1px solid #e2e8f0;
+      color: #4a5568;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .periodo-btn:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e0;
+    }
+
+    .periodo-btn.active {
+      background: #3182ce;
+      color: white;
+      border-color: #3182ce;
+    }
+
+    .add-periodo-btn {
+      padding: 6px 12px;
+      background: #48bb78;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .add-periodo-btn:hover {
+      background: #38a169;
+    }
+
+    .periodo-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #edf2f7;
+      color: #4a5568;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+
+    .add-tasa-form {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 2fr 1fr 1fr;
+      margin-bottom: 12px;
+    }
+
+    .form-input {
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #3182ce;
+    }
+
+    select.form-input {
+      cursor: pointer;
+    }
+
+    .add-btn {
+      width: 100%;
+      padding: 8px 16px;
+      background: #48bb78;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .add-btn:hover {
+      background: #38a169;
+    }
+
+    .suma-total {
+      background: #edf2f7;
+      border: 2px solid #3182ce;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .suma-label {
+      font-size: 0.9rem;
+      color: #4a5568;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .suma-monto {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #3182ce;
+    }
+
+    .suma-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .copiar-suma-btn {
+      padding: 8px 16px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copiar-suma-btn:hover {
+      background: #2c5282;
+    }
+
+    .limpiar-seleccion-btn {
+      padding: 8px 16px;
+      background: #718096;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .limpiar-seleccion-btn:hover {
+      background: #4a5568;
+    }
+
+    .tasas-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      max-height: none;
+      overflow-y: visible;
+    }
+
+    .tasa-item {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+      gap: 12px;
+    }
+
+    .tasa-item:hover {
+      border-color: #cbd5e0;
+      background: #edf2f7;
+    }
+
+    .tasa-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #3182ce;
+      flex-shrink: 0;
+    }
+
+    .tasa-info {
+      flex: 1;
+    }
+
+    .tasa-nombre {
+      font-weight: 600;
+      color: #2d3748;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+
+    .tasa-monto {
+      color: #48bb78;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .tasa-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .use-btn {
+      padding: 6px 12px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .use-btn:hover {
+      background: #2c5282;
+    }
+
+    .delete-btn {
+      padding: 6px 10px;
+      background: #e53e3e;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .delete-btn:hover {
+      background: #c53030;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #718096;
+      grid-column: 1 / -1;
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #38a169;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transform: translateX(300px);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #718096;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .modal-close:hover {
+      background: #edf2f7;
+    }
+
+    .tipo-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tipo-tag {
+      padding: 6px 12px;
+      background: #edf2f7;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tipo-tag:hover {
+      background: #e2e8f0;
+    }
+
+    .tipo-tag.selected {
+      background: #3182ce;
+      color: white;
+    }
+
+    @media (max-width: 1024px) {
+      .tasas-list {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+      }
+
+      .header h1 {
+        font-size: 1.6rem;
+      }
+
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .tasas-list {
+        grid-template-columns: 1fr;
+      }
+
+      .suma-actions {
+        flex-direction: column;
+      }
+
+      .toast {
+        right: 16px;
+        left: 16px;
+        transform: translateY(-100px);
+      }
+
+      .toast.show {
+        transform: translateY(0);
+      }
+
+      .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tab {
+        white-space: nowrap;
+      }
+
+      .periodo-selector {
+        width: 100%;
+        overflow-x: auto;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>Sistema de Reembolsos RC</h1>
-    <p>Continental Travel - Plantillas de Reembolso</p>
-  </div>
+  <div class="container">
+    <div class="header">
+      <h1>Sistema de Reembolsos RC</h1>
+      <p>Continental Travel - Plantillas de Reembolso</p>
+    </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="cambiarTab('plantillas')">Plantillas</button>
-    <button class="tab" onclick="cambiarTab('tasas')">Tasas</button>
-    <button class="tab" onclick="cambiarTab('crear')">Crear Plantilla</button>
-  </div>
+    <div class="tabs">
+      <button class="tab active" onclick="cambiarTab('plantillas')">📋 Plantillas</button>
+      <button class="tab" onclick="cambiarTab('tasas')">💰 Tasas</button>
+      <button class="tab" onclick="cambiarTab('crear')">➕ Crear Plantilla</button>
+    </div>
 
-  <div class="main-grid">
-    <!-- TAB: Plantillas -->
-    <div id="tab-plantillas" class="tab-content active">
-      <div class="left-column">
-        <div class="controls-panel">
-          <div class="controls-title">Configuración de Plantillas</div>
-          <div class="controls-grid">
-            <div class="control-group">
-              <label class="control-label">Ruta de Vuelo</label>
-              <input 
-                type="text" 
-                id="rutaInput" 
-                class="control-input" 
-                placeholder="Ej: LIM-BOG, NYC-MIA"
-                value=""
-              >
-            </div>
-            <div class="control-group">
-              <label class="control-label">Número CE2</label>
-              <div style="display: flex; gap: 10px; align-items: center;">
+    <div class="main-grid">
+      <!-- TAB: Plantillas -->
+      <div id="tab-plantillas" class="tab-content active">
+        <div class="left-column">
+          <div class="controls-panel">
+            <div class="controls-title">Configuración de Plantillas</div>
+            <div class="controls-grid">
+              <div class="control-group">
+                <label class="control-label">Ruta de Vuelo</label>
                 <input 
                   type="text" 
-                  id="ce2Input" 
+                  id="rutaInput" 
                   class="control-input" 
-                  placeholder="Número de 7 dígitos"
-                  maxlength="7"
-                  style="flex: 1;"
-                  readonly
+                  placeholder="Ej: LIM-BOG"
+                  value=""
                 >
-                <button class="generate-btn" onclick="generarCE2()" title="Generar nuevo número">
-                  Generar
-                </button>
+              </div>
+              <div class="control-group">
+                <label class="control-label">Número CE2</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <input 
+                    type="text" 
+                    id="ce2Input" 
+                    class="control-input" 
+                    placeholder="Número CE2"
+                    maxlength="7"
+                    style="flex: 1;"
+                    readonly
+                  >
+                  <button class="generate-btn" onclick="generarCE2()">
+                    Generar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="template-dropdown">
-          <div class="dropdown-header" onclick="toggleDropdown()">
-            <div class="dropdown-title">Todas las Plantillas</div>
-            <div class="dropdown-arrow">▼</div>
-          </div>
-          <div class="dropdown-content" id="dropdownContent">
-            <div class="templates-grid" id="templatesGrid">
-              <!-- Las plantillas se cargarán aquí dinámicamente -->
+          <div class="template-dropdown">
+            <div class="dropdown-header" onclick="toggleDropdown()">
+              <div class="dropdown-title">Todas las Plantillas</div>
+              <div class="dropdown-arrow">▼</div>
+            </div>
+            <div class="dropdown-content" id="dropdownContent">
+              <div class="templates-grid" id="templatesGrid"></div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- TAB: Tasas -->
-    <div id="tab-tasas" class="tab-content">
-      <div class="tasas-panel">
-        <div class="tasas-header">
-          <div class="controls-title" style="margin: 0;">Mis Tasas</div>
-        </div>
-
-        <div class="add-tasa-form">
-          <div class="form-row">
-            <input 
-              type="text" 
-              id="nombreTasaInput" 
-              class="form-input" 
-              placeholder="Nombre de la tasa"
-            >
-            <input 
-              type="number" 
-              id="montoTasaInput" 
-              class="form-input" 
-              placeholder="Monto ($)"
-              step="0.01"
-              min="0"
-            >
+      <!-- TAB: Tasas -->
+      <div id="tab-tasas" class="tab-content">
+        <div class="tasas-panel">
+          <div class="tasas-header">
+            <div class="controls-title" style="margin: 0;">
+              Mis Tasas
+              <span class="periodo-badge" id="periodoActualBadge">2024</span>
+            </div>
+            <div class="periodo-selector">
+              <div id="periodoButtons" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+              <button class="add-periodo-btn" onclick="abrirModalPeriodo()">
+                ➕ Año
+              </button>
+            </div>
           </div>
-          <button class="add-btn" onclick="agregarTasa()">
-            Agregar Tasa
-          </button>
-        </div>
 
-        <div class="suma-total" id="sumaTotal" style="display: none;">
-          <div class="suma-label">Total Seleccionado</div>
-          <div class="suma-monto" id="sumaMonto">$0.00</div>
-          <div class="suma-actions">
-            <button class="copiar-suma-btn" onclick="copiarSuma()">
-              Copiar Total
-            </button>
-            <button class="limpiar-seleccion-btn" onclick="limpiarSeleccion()">
-              Limpiar
-            </button>
-          </div>
-        </div>
-
-        <div class="tasas-list" id="tasasList">
-          <div class="empty-state">
-            <p>No hay tasas guardadas</p>
-            <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para usarlas rápidamente</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: Crear Plantilla -->
-    <div id="tab-crear" class="tab-content">
-      <div class="tasas-panel" style="max-width: 900px;">
-        <div class="tasas-header">
-          <div class="controls-title" style="margin: 0;">Crear Nueva Plantilla</div>
-        </div>
-
-        <div class="add-tasa-form">
-          <div class="form-row" style="grid-template-columns: 1fr;">
-            <input 
-              type="text" 
-              id="nombrePlantillaInput" 
-              class="form-input" 
-              placeholder="Nombre de la plantilla"
-            >
-          </div>
-          <div class="form-row" style="grid-template-columns: 1fr;">
-            <div class="control-group">
-              <label class="control-label">Tipo de Plantilla</label>
-              <select id="tipoPlantillaSelect" class="form-input">
-                <option value="reembolso">Reembolso</option>
-                <option value="reenvio">Reenvío</option>
-                <option value="waiver">Waiver</option>
+          <div class="add-tasa-form">
+            <div class="form-row">
+              <input 
+                type="text" 
+                id="nombreTasaInput" 
+                class="form-input" 
+                placeholder="Nombre de la tasa"
+              >
+              <input 
+                type="number" 
+                id="montoTasaInput" 
+                class="form-input" 
+                placeholder="Monto ($)"
+                step="0.01"
+                min="0"
+              >
+              <select id="periodoTasaInput" class="form-input">
+                <!-- Se llenará dinámicamente -->
               </select>
             </div>
-          </div>
-          <div class="form-row" style="grid-template-columns: 1fr;">
-            <div class="control-group">
-              <label class="control-label">Contenido (usa {RUTA} y {CE2} como variables)</label>
-              <textarea 
-                id="contenidoPlantillaInput" 
-                class="form-input" 
-                placeholder="Escribe el contenido de tu plantilla aquí..."
-                rows="8"
-                style="resize: vertical; font-family: inherit; line-height: 1.5;"
-              ></textarea>
-            </div>
-          </div>
-          <button class="add-btn" onclick="agregarPlantillaPersonalizada()">
-            Crear Plantilla
-          </button>
-        </div>
-
-        <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 16px; margin-top: 16px;">
-          <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Tipos de Plantilla Disponibles:</div>
-          <div class="tipo-tags" style="margin-bottom: 12px;">
-            <button class="tipo-tag" onclick="editarTipos()">Reembolso</button>
-            <button class="tipo-tag" onclick="editarTipos()">Reenvío</button>
-            <button class="tipo-tag" onclick="editarTipos()">Waiver</button>
-            <button class="tipo-tag" onclick="editarTipos()" style="background: #edf2f7; border: 1px dashed #cbd5e0;">
-              Editar Tipos
+            <button class="add-btn" onclick="agregarTasa()">
+              Agregar Tasa
             </button>
           </div>
-          <div style="font-size: 0.85rem; color: #718096;">
-            Haz clic en "Editar Tipos" para personalizar las categorías de plantillas
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="toast" id="toast">
-  Texto copiado al portapapeles
-</div>
-
-<!-- Modal para editar tipos -->
-<div class="modal" id="modalTipos">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">Gestionar Tipos de Plantillas</div>
-      <button class="modal-close" onclick="cerrarModalTipos()">×</button>
-    </div>
-    
-    <div class="add-tasa-form">
-      <div class="form-row" style="grid-template-columns: 1fr;">
-        <input 
-          type="text" 
-          id="nuevoTipoInput" 
-          class="form-input" 
-          placeholder="Nombre del nuevo tipo"
-        >
-      </div>
-      <button class="add-btn" onclick="agregarTipo()">
-        Agregar Tipo
-      </button>
-    </div>
-
-    <div style="margin-top: 20px;">
-      <div style="font-weight: 600; color: #2d3748; margin-bottom: 12px;">Tipos Actuales:</div>
-      <div id="listaTipos" style="display: flex; flex-direction: column; gap: 8px;">
-        <!-- Los tipos se cargarán aquí -->
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal para editar plantilla -->
-<div class="modal" id="modalEditar">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">Editar Plantilla</div>
-      <button class="modal-close" onclick="cerrarModalEditar()">×</button>
-    </div>
-    
-    <div class="add-tasa-form">
-      <div class="form-row" style="grid-template-columns: 1fr;">
-        <input 
-          type="text" 
-          id="editNombrePlantilla" 
-          class="form-input" 
-          placeholder="Nombre de la plantilla"
-        >
-      </div>
-      <div class="form-row" style="grid-template-columns: 1fr;">
-        <div class="control-group">
-          <label class="control-label">Tipo de Plantilla</label>
-          <select id="editTipoPlantilla" class="form-input">
-            <!-- Se llenará dinámicamente -->
-          </select>
-        </div>
-      </div>
-      <div class="form-row" style="grid-template-columns: 1fr;">
-        <div class="control-group">
-          <label class="control-label">Contenido</label>
-          <textarea 
-            id="editContenidoPlantilla" 
-            class="form-input" 
-            rows="8"
-            style="resize: vertical; font-family: inherit; line-height: 1.5;"
-          ></textarea>
-        </div>
-      </div>
-      <button class="add-btn" onclick="guardarEdicionPlantilla()">
-        Guardar Cambios
-      </button>
-    </div>
-  </div>
-</div>
-
-<script>
-  let isDropdownOpen = false;
-  let tasas = [];
-  let tasasSeleccionadas = new Set();
-  let plantillasPersonalizadas = [];
-  let tiposPlantilla = ['reembolso', 'reenvio', 'waiver'];
-  let plantillaEnEdicion = null;
-
-  const plantillasPredeterminadas = [
-    {
-      id: 'default1',
-      nombre: 'Reembolso Completo',
-      tipo: 'reembolso',
-      contenido: `RC REFUND 
-SE SOLICITA REEMBOLSO DE IMPUESTOS.
-RUTA: {RUTA}
-REEMBOLSO SOLO TAXAS - NO SE ENVIA NOTA DE CREDITO.
-DATOS/CE2{CE2}
-soportereembolsos@ContinentalTravel.com.pe`,
-      predeterminada: true
-    },
-    {
-      id: 'default2',
-      nombre: 'Reembolso Estándar',
-      tipo: 'reembolso',
-      contenido: `SE SOLICITA REEMBOLSO DE IMPUESTOS.
-RUTA: {RUTA}
-REEMBOLSO SOLO TAXAS - NO SE ENVIA NOTA DE CREDITO.
-DATOS/CE2{CE2}
-soportereembolsos@ContinentalTravel.com.pe`,
-      predeterminada: true
-    }
-  ];
-
-  document.addEventListener('DOMContentLoaded', function(){
-    cargarTasas();
-    cargarPlantillasPersonalizadas();
-    cargarTiposPlantilla();
-    generarCE2();
-    renderizarTodasLasPlantillas();
-
-    document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
-    
-    document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        agregarTasa();
-      }
-    });
-  });
-
-  function cambiarTab(tabName) {
-  document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-  
-  event.target.classList.add('active');
-  document.getElementById(`tab-${tabName}`).classList.add('active');
-}
-
-function cargarTiposPlantilla() {
-  try {
-    const tiposGuardados = localStorage.getItem('tipos-plantilla');
-    if (tiposGuardados) {
-      tiposPlantilla = JSON.parse(tiposGuardados);
-    }
-  } catch (error) {
-    console.log('Usando tipos predeterminados');
-  }
-  actualizarSelectTipos();
-}
-
-function guardarTiposPlantilla() {
-  try {
-    localStorage.setItem('tipos-plantilla', JSON.stringify(tiposPlantilla));
-  } catch (error) {
-    console.error('Error al guardar tipos:', error);
-  }
-}
-
-function actualizarSelectTipos() {
-  const select = document.getElementById('tipoPlantillaSelect');
-  const editSelect = document.getElementById('editTipoPlantilla');
-  
-  const options = tiposPlantilla.map(tipo => 
-    `<option value="${tipo}">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</option>`
-  ).join('');
-  
-  select.innerHTML = options;
-  editSelect.innerHTML = options;
-}
-
-function editarTipos() {
-  renderizarListaTipos();
-  document.getElementById('modalTipos').classList.add('show');
-}
-
-function cerrarModalTipos() {
-  document.getElementById('modalTipos').classList.remove('show');
-}
-
-function agregarTipo() {
-  const input = document.getElementById('nuevoTipoInput');
-  const nuevoTipo = input.value.trim().toLowerCase();
-  
-  if (!nuevoTipo) {
-    mostrarNotificacion('Por favor ingresa un nombre');
-    return;
-  }
-  
-  if (tiposPlantilla.includes(nuevoTipo)) {
-    mostrarNotificacion('Este tipo ya existe');
-    return;
-  }
-  
-  tiposPlantilla.push(nuevoTipo);
-  guardarTiposPlantilla();
-  actualizarSelectTipos();
-  renderizarListaTipos();
-  input.value = '';
-  mostrarNotificacion('Tipo agregado correctamente');
-}
-
-function eliminarTipo(tipo) {
-  if (tiposPlantilla.length <= 1) {
-    mostrarNotificacion('Debe haber al menos un tipo');
-    return;
-  }
-  
-  tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
-  guardarTiposPlantilla();
-  actualizarSelectTipos();
-  renderizarListaTipos();
-  mostrarNotificacion('Tipo eliminado');
-}
-
-function renderizarListaTipos() {
-  const lista = document.getElementById('listaTipos');
-  
-  lista.innerHTML = tiposPlantilla.map(tipo => `
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
-      <span style="font-weight: 500; color: #2d3748;">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</span>
-      <button class="delete-btn" onclick="eliminarTipo('${tipo}')">Eliminar</button>
-    </div>
-  `).join('');
-}
-
-function cargarPlantillasPersonalizadas() {
-  try {
-    const plantillasGuardadas = localStorage.getItem('plantillas-personalizadas');
-    if (plantillasGuardadas) {
-      plantillasPersonalizadas = JSON.parse(plantillasGuardadas);
-    }
-  } catch (error) {
-    console.log('No hay plantillas personalizadas guardadas');
-  }
-}
-
-function guardarPlantillasPersonalizadas() {
-  try {
-    localStorage.setItem('plantillas-personalizadas', JSON.stringify(plantillasPersonalizadas));
-  } catch (error) {
-    console.error('Error al guardar plantillas:', error);
-    mostrarNotificacion('Error al guardar. Verifica el almacenamiento del navegador.');
-  }
-}
-
-function agregarPlantillaPersonalizada() {
-  const nombre = document.getElementById('nombrePlantillaInput').value.trim();
-  const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
-  const tipo = document.getElementById('tipoPlantillaSelect').value;
-
-  if (!nombre || !contenido) {
-    mostrarNotificacion('Por favor completa todos los campos');
-    return;
-  }
-
-  const nuevaPlantilla = {
-    id: Date.now(),
-    nombre: nombre,
-    tipo: tipo,
-    contenido: contenido,
-    predeterminada: false
-  };
-
-  plantillasPersonalizadas.push(nuevaPlantilla);
-  guardarPlantillasPersonalizadas();
-  renderizarTodasLasPlantillas();
-
-  document.getElementById('nombrePlantillaInput').value = '';
-  document.getElementById('contenidoPlantillaInput').value = '';
-  document.getElementById('nombrePlantillaInput').focus();
-
-  mostrarNotificacion('Plantilla agregada correctamente');
-  cambiarTab('plantillas');
-}
-
-function eliminarPlantillaPersonalizada(id) {
-  if (confirm('¿Estás seguro de eliminar esta plantilla?')) {
-    plantillasPersonalizadas = plantillasPersonalizadas.filter(p => p.id !== id);
-    guardarPlantillasPersonalizadas();
-    renderizarTodasLasPlantillas();
-    mostrarNotificacion('Plantilla eliminada');
-  }
-}
-
-function abrirModalEditar(plantilla) {
-  plantillaEnEdicion = plantilla;
-  document.getElementById('editNombrePlantilla').value = plantilla.nombre;
-  document.getElementById('editTipoPlantilla').value = plantilla.tipo;
-  document.getElementById('editContenidoPlantilla').value = plantilla.contenido;
-  document.getElementById('modalEditar').classList.add('show');
-}
-function cerrarModalEditar() {
-  document.getElementById('modalEditar').classList.remove('show');
-  plantillaEnEdicion = null;
-}
-
-function guardarEdicionPlantilla() {
-  if (!plantillaEnEdicion) return;
-  
-  const nombre = document.getElementById('editNombrePlantilla').value.trim();
-  const tipo = document.getElementById('editTipoPlantilla').value;
-  const contenido = document.getElementById('editContenidoPlantilla').value.trim();
-  
-  if (!nombre || !contenido) {
-    mostrarNotificacion('Por favor completa todos los campos');
-    return;
-  }
-  
-  const index = plantillasPersonalizadas.findIndex(p => p.id === plantillaEnEdicion.id);
-  if (index !== -1) {
-    plantillasPersonalizadas[index] = {
-      ...plantillasPersonalizadas[index],
-      nombre: nombre,
-      tipo: tipo,
-      contenido: contenido
-    };
-    guardarPlantillasPersonalizadas();
-    renderizarTodasLasPlantillas();
-    cerrarModalEditar();
-    mostrarNotificacion('Plantilla actualizada');
-  }
-}
-
-function copiarPlantilla(plantilla) {
-  const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
-  const ce2 = document.getElementById('ce2Input').value;
-  
-  let textoFinal = plantilla.contenido
-    .replace(/{RUTA}/g, ruta)
-    .replace(/{CE2}/g, ce2);
-  
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(textoFinal)
-      .then(() => {
-        mostrarNotificacion('Plantilla copiada al portapapeles');
-        generarCE2();
-      })
-      .catch(() => {
-        copiarTextoFallback(textoFinal);
-      });
-  } else {
-    copiarTextoFallback(textoFinal);
-  }
-}
-
-function renderizarTodasLasPlantillas() {
-  const grid = document.getElementById('templatesGrid');
-  const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
-  const ce2 = document.getElementById('ce2Input').value;
-
-  const todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
-
-  if (todasLasPlantillas.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-state">
-        <p>No hay plantillas disponibles</p>
-        <p style="font-size: 0.85rem; margin-top: 8px;">Crea tu primera plantilla en la pestaña "Crear Plantilla"</p>
-      </div>
-    `;
-    return;
-  }
-
-  grid.innerHTML = todasLasPlantillas.map(plantilla => {
-    const contenidoPreview = plantilla.contenido
-      .replace(/{RUTA}/g, ruta)
-      .replace(/{CE2}/g, ce2);
-    
-    const tipoClass = plantilla.tipo || 'reembolso';
-    const puedeEditar = !plantilla.predeterminada;
-    
-    return `
-      <div class="template-card">
-        <div class="template-header">
-          <div class="template-title-wrapper">
-            <div class="template-title">${plantilla.nombre}</div>
-            <span class="template-type ${tipoClass}">${(plantilla.tipo || 'reembolso').charAt(0).toUpperCase() + (plantilla.tipo || 'reembolso').slice(1)}</span>
-          </div>
-          ${puedeEditar ? `
-            <div class="template-actions">
-              <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})' title="Editar">
-                ✏️
+          <div class="suma-total" id="sumaTotal" style="display: none;">
+            <div class="suma-label">Total Seleccionado</div>
+            <div class="suma-monto" id="sumaMonto">$0.00</div>
+            <div class="suma-actions">
+              <button class="copiar-suma-btn" onclick="copiarSuma()">
+                Copiar Total
               </button>
-              <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada(${plantilla.id})" title="Eliminar">
-                🗑️
+              <button class="limpiar-seleccion-btn" onclick="limpiarSeleccion()">
+                Limpiar
               </button>
             </div>
-          ` : ''}
+          </div>
+
+          <div class="tasas-list" id="tasasList">
+            <div class="empty-state">
+              <p>No hay tasas guardadas para este período</p>
+              <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para usarlas rápidamente</p>
+            </div>
+          </div>
         </div>
-        <div class="template-content">${contenidoPreview}</div>
-        <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>
-          Copiar Plantilla
-        </button>
       </div>
-    `;
-  }).join('');
-}
 
-function cargarTasas() {
-  try {
-    const tasasGuardadas = localStorage.getItem('tasas-guardadas');
-    if (tasasGuardadas) {
-      tasas = JSON.parse(tasasGuardadas);
-      renderizarTasas();
-    }
-  } catch (error) {
-    console.log('No hay tasas guardadas previamente');
-  }
-}
+      <!-- TAB: Crear Plantilla -->
+      <div id="tab-crear" class="tab-content">
+        <div class="tasas-panel" style="max-width: 900px;">
+          <div class="tasas-header">
+            <div class="controls-title" style="margin: 0;">Crear Nueva Plantilla</div>
+          </div>
 
-function guardarTasas() {
-  try {
-    localStorage.setItem('tasas-guardadas', JSON.stringify(tasas));
-  } catch (error) {
-    console.error('Error al guardar tasas:', error);
-    mostrarNotificacion('Error al guardar. Verifica el almacenamiento del navegador.');
-  }
-}
+          <div class="add-tasa-form">
+            <div class="form-row" style="grid-template-columns: 1fr;">
+              <input 
+                type="text" 
+                id="nombrePlantillaInput" 
+                class="form-input" 
+                placeholder="Nombre de la plantilla"
+              >
+            </div>
+            <div class="form-row" style="grid-template-columns: 1fr;">
+              <div class="control-group">
+                <label class="control-label">Tipo de Plantilla</label>
+                <select id="tipoPlantillaSelect" class="form-input"></select>
+              </div>
+            </div>
+            <div class="form-row" style="grid-template-columns: 1fr;">
+              <div class="control-group">
+                <label class="control-label">Contenido (usa {RUTA} y {CE2} como variables)</label>
+                <textarea 
+                  id="contenidoPlantillaInput" 
+                  class="form-input" 
+                  placeholder="Escribe el contenido de tu plantilla aquí..."
+                  rows="8"
+                  style="resize: vertical; font-family: inherit; line-height: 1.5;"
+                ></textarea>
+              </div>
+            </div>
+            <button class="add-btn" onclick="agregarPlantillaPersonalizada()">
+              Crear Plantilla
+            </button>
+          </div>
 
-function agregarTasa() {
-  const nombre = document.getElementById('nombreTasaInput').value.trim();
-  const monto = document.getElementById('montoTasaInput').value.trim();
-
-  if (!nombre || !monto) {
-    mostrarNotificacion('Por favor completa todos los campos');
-    return;
-  }
-
-  const nuevaTasa = {
-    id: Date.now(),
-    nombre: nombre,
-    monto: parseFloat(monto)
-  };
-
-  tasas.push(nuevaTasa);
-  guardarTasas();
-  renderizarTasas();
-
-  document.getElementById('nombreTasaInput').value = '';
-  document.getElementById('montoTasaInput').value = '';
-  document.getElementById('nombreTasaInput').focus();
-
-  mostrarNotificacion('Tasa agregada correctamente');
-}
-
-function eliminarTasa(id) {
-  tasas = tasas.filter(t => t.id !== id);
-  tasasSeleccionadas.delete(id);
-  guardarTasas();
-  renderizarTasas();
-  actualizarSuma();
-  mostrarNotificacion('Tasa eliminada');
-}
-
-function toggleSeleccionTasa(id) {
-  if (tasasSeleccionadas.has(id)) {
-    tasasSeleccionadas.delete(id);
-  } else {
-    tasasSeleccionadas.add(id);
-  }
-  actualizarSuma();
-}
-
-function actualizarSuma() {
-  const sumaPanel = document.getElementById('sumaTotal');
-  const sumaMonto = document.getElementById('sumaMonto');
-  
-  let total = 0;
-  tasasSeleccionadas.forEach(id => {
-    const tasa = tasas.find(t => t.id === id);
-    if (tasa) {
-      total += tasa.monto;
-    }
-  });
-
-  sumaMonto.textContent = '$' + total.toFixed(2);
-  
-  if (tasasSeleccionadas.size > 0) {
-    sumaPanel.style.display = 'block';
-  } else {
-    sumaPanel.style.display = 'none';
-  }
-}
-
-function copiarSuma() {
-  const sumaMonto = document.getElementById('sumaMonto').textContent.replace('$', '');
-  
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(sumaMonto)
-      .then(() => {
-        mostrarNotificacion('Total copiado: $' + sumaMonto);
-      })
-      .catch(() => {
-        copiarTextoFallback(sumaMonto);
-      });
-  } else {
-    copiarTextoFallback(sumaMonto);
-  }
-}
-
-function limpiarSeleccion() {
-  tasasSeleccionadas.clear();
-  renderizarTasas();
-  actualizarSuma();
-  mostrarNotificacion('Selección limpiada');
-}
-
-function usarTasa(tasa) {
-  const texto = tasa.monto.toFixed(2);
-  
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(texto)
-      .then(() => {
-        mostrarNotificacion('Monto copiado: $' + texto);
-      })
-      .catch(() => {
-        copiarTextoFallback(texto);
-      });
-  } else {
-    copiarTextoFallback(texto);
-  }
-}
-
-function renderizarTasas() {
-  const lista = document.getElementById('tasasList');
-  
-  if (tasas.length === 0) {
-    lista.innerHTML = `
-      <div class="empty-state">
-        <p>No hay tasas guardadas</p>
-        <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para usarlas rápidamente</p>
-      </div>
-    `;
-    return;
-  }
-
-  lista.innerHTML = tasas.map(tasa => `
-    <div class="tasa-item">
-      <input 
-        type="checkbox" 
-        class="tasa-checkbox" 
-        ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''}
-        onchange="toggleSeleccionTasa(${tasa.id})"
-      >
-      <div class="tasa-info">
-        <div class="tasa-nombre">${tasa.nombre}</div>
-        <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
-      </div>
-      <div class="tasa-actions">
-        <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">
-          📄
-        </button>
-        <button class="delete-btn" onclick="eliminarTasa(${tasa.id})" title="Eliminar">
-          🗑️
-        </button>
+          <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 16px; margin-top: 16px;">
+            <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">💡 Tipos de Plantilla Disponibles:</div>
+            <div class="tipo-tags" style="margin-bottom: 12px;">
+              <button class="tipo-tag" onclick="editarTipos()">Reembolso</button>
+              <button class="tipo-tag" onclick="editarTipos()">Reenvío</button>
+              <button class="tipo-tag" onclick="editarTipos()">Waiver</button>
+              <button class="tipo-tag" onclick="editarTipos()" style="background: #edf2f7; border: 1px dashed #cbd5e0;">
+                ➕ Editar Tipos
+              </button>
+            </div>
+            <div style="font-size: 0.85rem; color: #718096;">
+              Haz clic en "Editar Tipos" para personalizar las categorías de plantillas
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  `).join('');
-}
+  </div>
 
-function generarCE2() {
-  let numero;
-  do {
-    numero = Math.floor(Math.random() * 9000000) + 1000000;
-  } while (numero.toString().startsWith('2'));
-  
-  document.getElementById('ce2Input').value = numero;
-  renderizarTodasLasPlantillas();
-}
+  <div class="toast" id="toast">Texto copiado</div>
 
-function toggleDropdown() {
-  const dropdown = document.getElementById('dropdownContent');
-  const header = document.querySelector('.dropdown-header');
-  
-  isDropdownOpen = !isDropdownOpen;
-  
-  if (isDropdownOpen) {
-    dropdown.classList.add('open');
-    header.classList.add('open');
-  } else {
-    dropdown.classList.remove('open');
-    header.classList.remove('open');
-  }
-}
+  <!-- Modal Tipos -->
+  <div class="modal" id="modalTipos">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Gestionar Tipos de Plantillas</div>
+        <button class="modal-close" onclick="cerrarModalTipos()">×</button>
+      </div>
+      <div class="add-tasa-form">
+        <div class="form-row" style="grid-template-columns: 1fr;">
+          <input type="text" id="nuevoTipoInput" class="form-input" placeholder="Nombre del nuevo tipo">
+        </div>
+        <button class="add-btn" onclick="agregarTipo()">Agregar Tipo</button>
+      </div>
+      <div style="margin-top: 20px;">
+        <div style="font-weight: 600; color: #2d3748; margin-bottom: 12px;">Tipos Actuales:</div>
+        <div id="listaTipos" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+    </div>
+  </div>
 
-function copiarTextoFallback(texto, button) {
-  const textArea = document.createElement('textarea');
-  textArea.value = texto;
-  textArea.style.position = 'fixed';
-  textArea.style.left = '-999999px';
-  textArea.style.top = '-999999px';
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  
-  try {
-    document.execCommand('copy');
-    mostrarNotificacion('Texto copiado al portapapeles');
-    if (button) {
+  <!-- Modal Editar Plantilla -->
+  <div class="modal" id="modalEditar">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Editar Plantilla</div>
+        <button class="modal-close" onclick="cerrarModalEditar()">×</button>
+      </div>
+      <div class="add-tasa-form">
+        <div class="form-row" style="grid-template-columns: 1fr;">
+          <input type="text" id="editNombrePlantilla" class="form-input" placeholder="Nombre">
+        </div>
+        <div class="form-row" style="grid-template-columns: 1fr;">
+          <div class="control-group">
+            <label class="control-label">Tipo</label>
+            <select id="editTipoPlantilla" class="form-input"></select>
+          </div>
+        </div>
+        <div class="form-row" style="grid-template-columns: 1fr;">
+          <div class="control-group">
+            <label class="control-label">Contenido</label>
+            <textarea id="editContenidoPlantilla" class="form-input" rows="8" style="resize: vertical;"></textarea>
+          </div>
+        </div>
+        <button class="add-btn" onclick="guardarEdicionPlantilla()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Período -->
+  <div class="modal" id="modalPeriodo">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Agregar Nuevo Año</div>
+        <button class="modal-close" onclick="cerrarModalPeriodo()">×</button>
+      </div>
+      <div class="add-tasa-form">
+        <div class="form-row" style="grid-template-columns: 1fr;">
+          <input type="number" id="nuevoPeriodoInput" class="form-input" placeholder="Ej: 2025" min="2000" max="2100">
+        </div>
+        <button class="add-btn" onclick="agregarPeriodo()">Agregar Año</button>
+      </div>
+      <div style="margin-top: 20px;">
+        <div style="font-weight: 600; color: #2d3748; margin-bottom: 12px;">Años Actuales:</div>
+        <div id="listaPeriodos" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isDropdownOpen = false;
+    let tasas = [];
+    let tasasSeleccionadas = new Set();
+    let plantillasPersonalizadas = [];
+    let tiposPlantilla = ['reembolso', 'reenvio', 'waiver'];
+    let plantillaEnEdicion = null;
+    let periodos = [2024];
+    let periodoActual = 2024;
+
+    const plantillasPredeterminadas = [
+      {
+        id: 'default1',
+        nombre: 'Reembolso Completo',
+        tipo: 'reembolso',
+        contenido: `RC REFUND SE SOLICITA REEMBOLSO DE IMPUESTOS.
+RUTA: {RUTA}
+REEMBOLSO SOLO TAXAS - NO SE ENVIA NOTA DE CREDITO.
+DATOS/CE2{CE2}
+soportereembolsos@ContinentalTravel.com.pe`,
+        predeterminada: true
+      },
+      {
+        id: 'default2',
+        nombre: 'Reembolso Estándar',
+        tipo: 'reembolso',
+        contenido: `SE SOLICITA REEMBOLSO DE IMPUESTOS.RUTA: {RUTA}
+REEMBOLSO SOLO TAXAS - NO SE ENVIA NOTA DE CREDITO.
+DATOS/CE2{CE2}
+soportereembolsos@ContinentalTravel.com.pe`,
+        predeterminada: true
+      }
+    ];
+
+    document.addEventListener('DOMContentLoaded', function(){
+      cargarPeriodos();
+      cargarTasas();
+      cargarPlantillasPersonalizadas();
+      cargarTiposPlantilla();
       generarCE2();
+      renderizarTodasLasPlantillas();
+      renderizarBotonesPeriodo();
+      actualizarSelectPeriodo();
+
+      document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
+      
+      document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          agregarTasa();
+        }
+      });
+    });
+
+    function cambiarTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
     }
-  } catch (err) {
-    console.error('Error al copiar:', err);
-    alert('Error al copiar el texto. Por favor, cópialo manualmente.');
-  } finally {
-    document.body.removeChild(textArea);
-  }
-}
 
-function mostrarNotificacion(mensaje) {
-  const toast = document.getElementById('toast');
-  toast.textContent = mensaje;
-  toast.classList.add('show');
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3000);
-}
+    // PERÍODOS
+    function cargarPeriodos() {
+      try {
+        const periodosGuardados = localStorage.getItem('periodos-tasas');
+        if (periodosGuardados) {
+          periodos = JSON.parse(periodosGuardados);
+        }
+      } catch (error) {
+        console.log('Usando períodos predeterminados');
+      }
+    }
 
-let lastTouchEnd = 0;
-document.addEventListener('touchend', function (event) {
-  const now = (new Date()).getTime();
-  if (now - lastTouchEnd <= 300) {
-    event.preventDefault();
-  }
-  lastTouchEnd = now;
-}, false);
-</script>
+    function guardarPeriodos() {
+      try {
+        localStorage.setItem('periodos-tasas', JSON.stringify(periodos));
+      } catch (error) {
+        console.error('Error al guardar períodos:', error);
+      }
+    }
+
+    function abrirModalPeriodo() {
+      renderizarListaPeriodos();
+      document.getElementById('modalPeriodo').classList.add('show');
+    }
+
+    function cerrarModalPeriodo() {
+      document.getElementById('modalPeriodo').classList.remove('show');
+    }
+
+    function agregarPeriodo() {
+      const input = document.getElementById('nuevoPeriodoInput');
+      const nuevoPeriodo = parseInt(input.value);
+      
+      if (!nuevoPeriodo || nuevoPeriodo < 2000 || nuevoPeriodo > 2100) {
+        mostrarNotificacion('Por favor ingresa un año válido');
+        return;
+      }
+      
+      if (periodos.includes(nuevoPeriodo)) {
+        mostrarNotificacion('Este año ya existe');
+        return;
+      }
+      
+      periodos.push(nuevoPeriodo);
+      periodos.sort((a, b) => b - a);
+      guardarPeriodos();
+      renderizarBotonesPeriodo();
+      actualizarSelectPeriodo();
+      renderizarListaPeriodos();
+      input.value = '';
+      mostrarNotificacion('Año agregado correctamente');
+    }
+
+    function eliminarPeriodo(periodo) {
+      if (periodos.length <= 1) {
+        mostrarNotificacion('Debe haber al menos un año');
+        return;
+      }
+
+      const tasasDelPeriodo = tasas.filter(t => t.periodo === periodo);
+      if (tasasDelPeriodo.length > 0) {
+        if (!confirm(`Este año tiene ${tasasDelPeriodo.length} tasa(s). ¿Deseas eliminarlo de todos modos?`)) {
+          return;
+        }
+      }
+      
+      periodos = periodos.filter(p => p !== periodo);
+      
+      if (periodoActual === periodo) {
+        periodoActual = periodos[0];
+      }
+      
+      guardarPeriodos();
+      renderizarBotonesPeriodo();
+      actualizarSelectPeriodo();
+      renderizarListaPeriodos();
+      renderizarTasas();
+      mostrarNotificacion('Año eliminado');
+    }
+
+    function renderizarListaPeriodos() {
+      const lista = document.getElementById('listaPeriodos');
+      
+      lista.innerHTML = periodos.map(periodo => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+          <span style="font-weight: 500; color: #2d3748;">${periodo}</span>
+          <button class="delete-btn" onclick="eliminarPeriodo(${periodo})">Eliminar</button>
+        </div>
+      `).join('');
+    }
+
+    function cambiarPeriodo(periodo) {
+      periodoActual = periodo;
+      tasasSeleccionadas.clear();
+      renderizarBotonesPeriodo();
+      renderizarTasas();
+      actualizarSuma();
+      document.getElementById('periodoActualBadge').textContent = periodo;
+    }
+
+    function renderizarBotonesPeriodo() {
+      const container = document.getElementById('periodoButtons');
+      
+      container.innerHTML = periodos.map(periodo => `
+        <button 
+          class="periodo-btn ${periodo === periodoActual ? 'active' : ''}" 
+          onclick="cambiarPeriodo(${periodo})"
+        >
+          ${periodo}
+        </button>
+      `).join('');
+    }
+
+    function actualizarSelectPeriodo() {
+      const select = document.getElementById('periodoTasaInput');
+      select.innerHTML = periodos.map(periodo => 
+        `<option value="${periodo}" ${periodo === periodoActual ? 'selected' : ''}>${periodo}</option>`
+      ).join('');
+    }
+
+    // TIPOS
+    function cargarTiposPlantilla() {
+      try {
+        const tiposGuardados = localStorage.getItem('tipos-plantilla');
+        if (tiposGuardados) {
+          tiposPlantilla = JSON.parse(tiposGuardados);
+        }
+      } catch (error) {
+        console.log('Usando tipos predeterminados');
+      }
+      actualizarSelectTipos();
+    }
+
+    function guardarTiposPlantilla() {
+      try {
+        localStorage.setItem('tipos-plantilla', JSON.stringify(tiposPlantilla));
+      } catch (error) {
+        console.error('Error al guardar tipos:', error);
+      }
+    }
+
+    function actualizarSelectTipos() {
+      const select = document.getElementById('tipoPlantillaSelect');
+      const editSelect = document.getElementById('editTipoPlantilla');
+      
+      const options = tiposPlantilla.map(tipo => 
+        `<option value="${tipo}">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</option>`
+      ).join('');
+      
+      select.innerHTML = options;
+      editSelect.innerHTML = options;
+    }
+
+    function editarTipos() {
+      renderizarListaTipos();
+      document.getElementById('modalTipos').classList.add('show');
+    }
+
+    function cerrarModalTipos() {
+      document.getElementById('modalTipos').classList.remove('show');
+    }
+
+    function agregarTipo() {
+      const input = document.getElementById('nuevoTipoInput');
+      const nuevoTipo = input.value.trim().toLowerCase();
+      
+      if (!nuevoTipo) {
+        mostrarNotificacion('Por favor ingresa un nombre');
+        return;
+      }
+      
+      if (tiposPlantilla.includes(nuevoTipo)) {
+        mostrarNotificacion('Este tipo ya existe');
+        return;
+      }
+      
+      tiposPlantilla.push(nuevoTipo);
+      guardarTiposPlantilla();
+      actualizarSelectTipos();
+      renderizarListaTipos();
+      input.value = '';
+      mostrarNotificacion('Tipo agregado correctamente');
+    }
+
+    function eliminarTipo(tipo) {
+      if (tiposPlantilla.length <= 1) {
+        mostrarNotificacion('Debe haber al menos un tipo');
+        return;
+      }
+      
+      tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
+      guardarTiposPlantilla();
+      actualizarSelectTipos();
+      renderizarListaTipos();
+      mostrarNotificacion('Tipo eliminado');
+    }
+
+    function renderizarListaTipos() {
+      const lista = document.getElementById('listaTipos');
+      
+      lista.innerHTML = tiposPlantilla.map(tipo => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+          <span style="font-weight: 500; color: #2d3748;">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</span>
+          <button class="delete-btn" onclick="eliminarTipo('${tipo}')">Eliminar</button>
+        </div>
+      `).join('');
+    }
+
+    // PLANTILLAS
+    function cargarPlantillasPersonalizadas() {
+      try {
+        const plantillasGuardadas = localStorage.getItem('plantillas-personalizadas');
+        if (plantillasGuardadas) {
+          plantillasPersonalizadas = JSON.parse(plantillasGuardadas);
+        }
+      } catch (error) {
+        console.log('No hay plantillas personalizadas guardadas');
+      }
+    }
+
+    function guardarPlantillasPersonalizadas() {
+      try {
+        localStorage.setItem('plantillas-personalizadas', JSON.stringify(plantillasPersonalizadas));
+      } catch (error) {
+        console.error('Error al guardar plantillas:', error);
+        mostrarNotificacion('Error al guardar.');
+      }
+    }
+
+    function agregarPlantillaPersonalizada() {
+      const nombre = document.getElementById('nombrePlantillaInput').value.trim();
+      const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
+      const tipo = document.getElementById('tipoPlantillaSelect').value;
+
+      if (!nombre || !contenido) {
+        mostrarNotificacion('Por favor completa todos los campos');
+        return;
+      }
+
+      const nuevaPlantilla = {
+        id: Date.now(),
+        nombre: nombre,
+        tipo: tipo,
+        contenido: contenido,
+        predeterminada: false
+      };
+
+      plantillasPersonalizadas.push(nuevaPlantilla);
+      guardarPlantillasPersonalizadas();
+      renderizarTodasLasPlantillas();
+
+      document.getElementById('nombrePlantillaInput').value = '';
+      document.getElementById('contenidoPlantillaInput').value = '';
+
+      mostrarNotificacion('Plantilla agregada');
+      cambiarTab('plantillas');
+    }
+
+    function eliminarPlantillaPersonalizada(id) {
+      if (confirm('¿Eliminar esta plantilla?')) {
+        plantillasPersonalizadas = plantillasPersonalizadas.filter(p => p.id !== id);
+        guardarPlantillasPersonalizadas();
+        renderizarTodasLasPlantillas();
+        mostrarNotificacion('Plantilla eliminada');
+      }
+    }
+
+    function abrirModalEditar(plantilla) {
+      plantillaEnEdicion = plantilla;
+      document.getElementById('editNombrePlantilla').value = plantilla.nombre;
+      document.getElementById('editTipoPlantilla').value = plantilla.tipo;
+      document.getElementById('editContenidoPlantilla').value = plantilla.contenido;
+      document.getElementById('modalEditar').classList.add('show');
+    }
+
+    function cerrarModalEditar() {
+      document.getElementById('modalEditar').classList.remove('show');
+      plantillaEnEdicion = null;
+    }
+
+    function guardarEdicionPlantilla() {
+      if (!plantillaEnEdicion) return;
+      
+      const nombre = document.getElementById('editNombrePlantilla').value.trim();
+      const tipo = document.getElementById('editTipoPlantilla').value;
+      const contenido = document.getElementById('editContenidoPlantilla').value.trim();
+      
+      if (!nombre || !contenido) {
+        mostrarNotificacion('Completa todos los campos');
+        return;
+      }
+      
+      const index = plantillasPersonalizadas.findIndex(p => p.id === plantillaEnEdicion.id);
+      if (index !== -1) {
+        plantillasPersonalizadas[index] = {
+          ...plantillasPersonalizadas[index],
+          nombre: nombre,
+          tipo: tipo,
+          contenido: contenido
+        };
+        guardarPlantillasPersonalizadas();
+        renderizarTodasLasPlantillas();
+        cerrarModalEditar();
+        mostrarNotificacion('Plantilla actualizada');
+      }
+    }
+
+    function copiarPlantilla(plantilla) {
+      const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
+      const ce2 = document.getElementById('ce2Input').value;
+      
+      let textoFinal = plantilla.contenido
+        .replace(/{RUTA}/g, ruta)
+        .replace(/{CE2}/g, ce2);
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textoFinal)
+          .then(() => {
+            mostrarNotificacion('Plantilla copiada');
+            generarCE2();
+          })
+          .catch(() => {
+            copiarTextoFallback(textoFinal);
+          });
+      } else {
+        copiarTextoFallback(textoFinal);
+      }
+    }
+
+    function renderizarTodasLasPlantillas() {
+      const grid = document.getElementById('templatesGrid');
+      const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
+      const ce2 = document.getElementById('ce2Input').value;
+
+      const todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
+
+      if (todasLasPlantillas.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <p>No hay plantillas disponibles</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = todasLasPlantillas.map(plantilla => {
+        const contenidoPreview = plantilla.contenido
+          .replace(/{RUTA}/g, ruta)
+          .replace(/{CE2}/g, ce2);
+        
+        const tipoClass = plantilla.tipo || 'reembolso';
+        const puedeEditar = !plantilla.predeterminada;
+        
+        return `
+          <div class="template-card">
+            <div class="template-header">
+              <div class="template-title-wrapper">
+                <div class="template-title">${plantilla.nombre}</div>
+                <span class="template-type ${tipoClass}">${(plantilla.tipo || 'reembolso').charAt(0).toUpperCase() + (plantilla.tipo || 'reembolso').slice(1)}</span>
+              </div>
+              ${puedeEditar ? `
+                <div class="template-actions">
+                  <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>✏️</button>
+                  <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada(${plantilla.id})">🗑️</button>
+                </div>
+              ` : ''}
+            </div>
+            <div class="template-content">${contenidoPreview}</div>
+            <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // TASAS
+    function cargarTasas() {
+      try {
+        const tasasGuardadas = localStorage.getItem('tasas-guardadas');
+        if (tasasGuardadas) {
+          tasas = JSON.parse(tasasGuardadas);
+          renderizarTasas();
+        }
+      } catch (error) {
+        console.log('No hay tasas guardadas');
+      }
+    }
+
+    function guardarTasas() {
+      try {
+        localStorage.setItem('tasas-guardadas', JSON.stringify(tasas));
+      } catch (error) {
+        console.error('Error al guardar tasas:', error);
+      }
+    }
+
+    function agregarTasa() {
+      const nombre = document.getElementById('nombreTasaInput').value.trim();
+      const monto = document.getElementById('montoTasaInput').value.trim();
+      const periodo = parseInt(document.getElementById('periodoTasaInput').value);
+
+      if (!nombre || !monto) {
+        mostrarNotificacion('Completa todos los campos');
+        return;
+      }
+
+      const nuevaTasa = {
+        id: Date.now(),
+        nombre: nombre,
+        monto: parseFloat(monto),
+        periodo: periodo
+      };
+
+      tasas.push(nuevaTasa);
+      guardarTasas();
+      renderizarTasas();
+
+      document.getElementById('nombreTasaInput').value = '';
+      document.getElementById('montoTasaInput').value = '';
+      document.getElementById('nombreTasaInput').focus();
+
+      mostrarNotificacion('Tasa agregada');
+    }
+
+    function eliminarTasa(id) {
+      tasas = tasas.filter(t => t.id !== id);
+      tasasSeleccionadas.delete(id);
+      guardarTasas();
+      renderizarTasas();
+      actualizarSuma();
+      mostrarNotificacion('Tasa eliminada');
+    }
+
+    function toggleSeleccionTasa(id) {
+      if (tasasSeleccionadas.has(id)) {
+        tasasSeleccionadas.delete(id);
+      } else {
+        tasasSeleccionadas.add(id);
+      }
+      actualizarSuma();
+    }
+
+    function actualizarSuma() {
+      const sumaPanel = document.getElementById('sumaTotal');
+      const sumaMonto = document.getElementById('sumaMonto');
+      
+      let total = 0;
+      tasasSeleccionadas.forEach(id => {
+        const tasa = tasas.find(t => t.id === id);
+        if (tasa) {
+          total += tasa.monto;
+        }
+      });
+
+      sumaMonto.textContent = ' + total.toFixed(2);
+      
+      sumaPanel.style.display = tasasSeleccionadas.size > 0 ? 'block' : 'none';
+    }
+
+    function copiarSuma() {
+      const sumaMonto = document.getElementById('sumaMonto').textContent.replace(', '');
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(sumaMonto)
+          .then(() => mostrarNotificacion('Total copiado:  + sumaMonto))
+          .catch(() => copiarTextoFallback(sumaMonto));
+      } else {
+        copiarTextoFallback(sumaMonto);
+      }
+    }
+
+    function limpiarSeleccion() {
+      tasasSeleccionadas.clear();
+      renderizarTasas();
+      actualizarSuma();
+      mostrarNotificacion('Selección limpiada');
+    }
+
+    function usarTasa(tasa) {
+      const texto = tasa.monto.toFixed(2);
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(texto)
+          .then(() => mostrarNotificacion('Monto copiado:  + texto))
+          .catch(() => copiarTextoFallback(texto));
+      } else {
+        copiarTextoFallback(texto);
+      }
+    }
+
+    function renderizarTasas() {
+      const lista = document.getElementById('tasasList');
+      const tasasDelPeriodo = tasas.filter(t => t.periodo === periodoActual);
+      
+      if (tasasDelPeriodo.length === 0) {
+        lista.innerHTML = `
+          <div class="empty-state">
+            <p>No hay tasas para ${periodoActual}</p>
+            <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para este año</p>
+          </div>
+        `;
+        return;
+      }
+
+      lista.innerHTML = tasasDelPeriodo.map(tasa => `
+        <div class="tasa-item">
+          <input 
+            type="checkbox" 
+            class="tasa-checkbox" 
+            ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''}
+            onchange="toggleSeleccionTasa(${tasa.id})"
+          >
+          <div class="tasa-info">
+            <div class="tasa-nombre">${tasa.nombre}</div>
+            <div class="tasa-monto">${tasa.monto.toFixed(2)}</div>
+          </div>
+          <div class="tasa-actions">
+            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})'>📄</button>
+            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // UTILIDADES
+    function generarCE2() {
+      let numero;
+      do {
+        numero = Math.floor(Math.random() * 9000000) + 1000000;
+      } while (numero.toString().startsWith('2'));
+      
+      document.getElementById('ce2Input').value = numero;
+      renderizarTodasLasPlantillas();
+    }
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById('dropdownContent');
+      const header = document.querySelector('.dropdown-header');
+      
+      isDropdownOpen = !isDropdownOpen;
+      
+      if (isDropdownOpen) {
+        dropdown.classList.add('open');
+        header.classList.add('open');
+      } else {
+        dropdown.classList.remove('open');
+        header.classList.remove('open');
+      }
+    }
+
+    function copiarTextoFallback(texto) {
+      const textArea = document.createElement('textarea');
+      textArea.value = texto;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        mostrarNotificacion('Texto copiado');
+      } catch (err) {
+        alert('Error al copiar');
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+
+    function mostrarNotificacion(mensaje) {
+      const toast = document.getElementById('toast');
+      toast.textContent = mensaje;
+      toast.classList.add('show');
+      
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  </script>
 </body>
 </html>
-
-
