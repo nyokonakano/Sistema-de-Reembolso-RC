@@ -24,9 +24,88 @@
       margin: 0 auto;
     }
 
+    .auth-container {
+      max-width: 400px;
+      margin: 100px auto;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 32px;
+    }
+
+    .auth-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: #3182ce;
+    }
+
+    .auth-btn {
+      width: 100%;
+      padding: 12px;
+      background: #3182ce;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 8px;
+    }
+
+    .auth-btn:hover {
+      background: #2c5282;
+    }
+
+    .auth-btn.secondary {
+      background: #718096;
+    }
+
+    .auth-btn.secondary:hover {
+      background: #4a5568;
+    }
+
+    .auth-error {
+      background: #fed7d7;
+      color: #742a2a;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+    }
+
     .header {
       text-align: center;
       margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title {
+      flex: 1;
     }
 
     .header h1 {
@@ -39,6 +118,36 @@
     .header p {
       color: #718096;
       font-size: 0.95rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .user-email {
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
+
+    .logout-btn {
+      padding: 6px 12px;
+      background: #e53e3e;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #c53030;
     }
 
     .tabs {
@@ -773,14 +882,42 @@
         width: 100%;
         overflow-x: auto;
       }
+
+      .header {
+        flex-direction: column;
+        gap: 16px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <!-- Auth Container -->
+  <div id="authContainer" class="auth-container" style="display: none;">
+    <div class="auth-title">Iniciar Sesión</div>
+    <div id="authError" class="auth-error" style="display: none;"></div>
+    <input type="email" id="emailInput" class="auth-input" placeholder="Email">
+    <input type="password" id="passwordInput" class="auth-input" placeholder="Contraseña">
+    <button class="auth-btn" onclick="login()">Iniciar Sesión</button>
+    <button class="auth-btn secondary" onclick="register()">Registrarse</button>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingContainer" class="loading">
+    <div style="font-size: 2rem; margin-bottom: 16px;">⏳</div>
+    <div>Cargando aplicación...</div>
+  </div>
+
+  <!-- Main App -->
+  <div id="appContainer" class="container" style="display: none;">
     <div class="header">
-      <h1>Sistema de Reembolsos RC</h1>
-      <p>Continental Travel - Plantillas de Reembolso</p>
+      <div class="header-title">
+        <h1>Sistema de Reembolsos RC</h1>
+        <p>Continental Travel - Plantillas de Reembolso</p>
+      </div>
+      <div class="user-info">
+        <span class="user-email" id="userEmail"></span>
+        <button class="logout-btn" onclick="logout()">Salir</button>
+      </div>
     </div>
 
     <div class="tabs">
@@ -871,7 +1008,6 @@
                 min="0"
               >
               <select id="periodoTasaInput" class="form-input">
-                <!-- Se llenará dinámicamente -->
               </select>
             </div>
             <button class="add-btn" onclick="agregarTasa()">
@@ -961,7 +1097,7 @@
 
   <div class="toast" id="toast">Texto copiado</div>
 
-  <!-- Modal Tipos -->
+  <!-- Modals -->
   <div class="modal" id="modalTipos">
     <div class="modal-content">
       <div class="modal-header">
@@ -981,7 +1117,6 @@
     </div>
   </div>
 
-  <!-- Modal Editar Plantilla -->
   <div class="modal" id="modalEditar">
     <div class="modal-content">
       <div class="modal-header">
@@ -1009,7 +1144,6 @@
     </div>
   </div>
 
-  <!-- Modal Agregar Período -->
   <div class="modal" id="modalPeriodo">
     <div class="modal-content">
       <div class="modal-header">
@@ -1029,7 +1163,32 @@
     </div>
   </div>
 
-  <script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // CONFIGURACIÓN DE FIREBASE - REEMPLAZA CON TUS CREDENCIALES
+    const firebaseConfig = {
+      apiKey: "AIzaSyB40AsFDc3mDU7DzXe4fwS2IX4uwP3SHVQ",
+      authDomain: "sistema-de-reembolsos-rc.firebaseapp.com",
+      projectId: "sistema-de-reembolsos-rc",
+      storageBucket: "sistema-de-reembolsos-rc.firebasestorage.app",
+      messagingSenderId: "919633406296",
+      appId: "1:919633406296:web:94ee02ec2d987900a41d2d"
+    };
+
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Variables globales
+    window.auth = auth;
+    window.db = db;
+    window.currentUser = null;
+
     let isDropdownOpen = false;
     let tasas = [];
     let tasasSeleccionadas = new Set();
@@ -1065,73 +1224,117 @@ soportereembolsos@ContinentalTravel.com.pe`,
       }
     ];
 
-    document.addEventListener('DOMContentLoaded', function(){
-      cargarPeriodos();
-      cargarTasas();
-      migrarTasasAntiguasAPeriodos();
-      cargarPlantillasPersonalizadas();
-      cargarTiposPlantilla();
-      generarCE2();
-      renderizarTodasLasPlantillas();
-      renderizarBotonesPeriodo();
-      actualizarSelectPeriodo();
-
-      document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
+    // AUTH
+    window.login = async function() {
+      const email = document.getElementById('emailInput').value;
+      const password = document.getElementById('passwordInput').value;
+      const errorDiv = document.getElementById('authError');
       
-      document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          agregarTasa();
-        }
-      });
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        errorDiv.textContent = getErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+      }
+    };
+
+    window.register = async function() {
+      const email = document.getElementById('emailInput').value;
+      const password = document.getElementById('passwordInput').value;
+      const errorDiv = document.getElementById('authError');
+      
+      if (password.length < 6) {
+        errorDiv.textContent = 'La contraseña debe tener al menos 6 caracteres';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        errorDiv.textContent = getErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+      }
+    };
+
+    window.logout = async function() {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        mostrarNotificacion('Error al cerrar sesión');
+      }
+    };
+
+    function getErrorMessage(code) {
+      const messages = {
+        'auth/email-already-in-use': 'Este email ya está registrado',
+        'auth/invalid-email': 'Email inválido',
+        'auth/user-not-found': 'Usuario no encontrado',
+        'auth/wrong-password': 'Contraseña incorrecta',
+        'auth/weak-password': 'Contraseña muy débil',
+        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde'
+      };
+      return messages[code] || 'Error al autenticar';
+    }
+
+    // Auth State Observer
+    onAuthStateChanged(auth, async (user) => {
+      document.getElementById('loadingContainer').style.display = 'none';
+      
+      if (user) {
+        window.currentUser = user;
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        document.getElementById('userEmail').textContent = user.email;
+        
+        await cargarDatosFirebase();
+        generarCE2();
+        renderizarTodasLasPlantillas();
+      } else {
+        window.currentUser = null;
+        document.getElementById('authContainer').style.display = 'block';
+        document.getElementById('appContainer').style.display = 'none';
+      }
     });
 
-    function cambiarTab(tabName) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
-      event.target.classList.add('active');
-      document.getElementById(`tab-${tabName}`).classList.add('active');
+    // FIRESTORE FUNCTIONS
+    async function cargarDatosFirebase() {
+      try {
+        await Promise.all([
+          cargarPeriodos(),
+          cargarTasas(),
+          cargarPlantillas(),
+          cargarTipos()
+        ]);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        mostrarNotificacion('Error al cargar datos');
+      }
     }
 
     // PERÍODOS
-    function cargarPeriodos() {
-      try {
-        const periodosGuardados = localStorage.getItem('periodos-tasas');
-        if (periodosGuardados) {
-          periodos = JSON.parse(periodosGuardados);
-        } else {
-          // Si no hay períodos guardados, crear el año actual
-          const anioActual = new Date().getFullYear();
-          periodos = [anioActual];
-          periodoActual = anioActual;
-          guardarPeriodos();
-        }
-      } catch (error) {
-        console.log('Usando períodos predeterminados');
+    async function cargarPeriodos() {
+      const q = query(collection(db, 'periodos'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
         const anioActual = new Date().getFullYear();
         periodos = [anioActual];
         periodoActual = anioActual;
+        await addDoc(collection(db, 'periodos'), {
+          userId: currentUser.uid,
+          periodos: periodos
+        });
+      } else {
+        periodos = snapshot.docs[0].data().periodos || [new Date().getFullYear()];
+        periodoActual = periodos[0];
       }
+      
+      renderizarBotonesPeriodo();
+      actualizarSelectPeriodo();
     }
 
-    function guardarPeriodos() {
-      try {
-        localStorage.setItem('periodos-tasas', JSON.stringify(periodos));
-      } catch (error) {
-        console.error('Error al guardar períodos:', error);
-      }
-    }
-
-    function abrirModalPeriodo() {
-      renderizarListaPeriodos();
-      document.getElementById('modalPeriodo').classList.add('show');
-    }
-
-    function cerrarModalPeriodo() {
-      document.getElementById('modalPeriodo').classList.remove('show');
-    }
-
-    function agregarPeriodo() {
+    window.agregarPeriodo = async function() {
       const input = document.getElementById('nuevoPeriodoInput');
       const nuevoPeriodo = parseInt(input.value);
       
@@ -1147,15 +1350,21 @@ soportereembolsos@ContinentalTravel.com.pe`,
       
       periodos.push(nuevoPeriodo);
       periodos.sort((a, b) => b - a);
-      guardarPeriodos();
+      
+      const q = query(collection(db, 'periodos'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
+      await updateDoc(doc(db, 'periodos', snapshot.docs[0].id), {
+        periodos: periodos
+      });
+      
       renderizarBotonesPeriodo();
       actualizarSelectPeriodo();
       renderizarListaPeriodos();
       input.value = '';
       mostrarNotificacion('Año agregado correctamente');
-    }
+    };
 
-    function eliminarPeriodo(periodo) {
+    window.eliminarPeriodo = async function(periodo) {
       if (periodos.length <= 1) {
         mostrarNotificacion('Debe haber al menos un año');
         return;
@@ -1174,37 +1383,342 @@ soportereembolsos@ContinentalTravel.com.pe`,
         periodoActual = periodos[0];
       }
       
-      guardarPeriodos();
+      const q = query(collection(db, 'periodos'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
+      await updateDoc(doc(db, 'periodos', snapshot.docs[0].id), {
+        periodos: periodos
+      });
+      
       renderizarBotonesPeriodo();
       actualizarSelectPeriodo();
       renderizarListaPeriodos();
       renderizarTasas();
       mostrarNotificacion('Año eliminado');
-    }
+    };
 
-    function renderizarListaPeriodos() {
-      const lista = document.getElementById('listaPeriodos');
+    // TASAS
+    async function cargarTasas() {
+      const q = query(collection(db, 'tasas'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
       
-      lista.innerHTML = periodos.map(periodo => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
-          <span style="font-weight: 500; color: #2d3748;">${periodo}</span>
-          <button class="delete-btn" onclick="eliminarPeriodo(${periodo})">Eliminar</button>
-        </div>
-      `).join('');
+      tasas = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      renderizarTasas();
     }
 
-    function cambiarPeriodo(periodo) {
+    window.agregarTasa = async function() {
+      const nombre = document.getElementById('nombreTasaInput').value.trim();
+      const monto = document.getElementById('montoTasaInput').value.trim();
+      const periodo = parseInt(document.getElementById('periodoTasaInput').value);
+
+      if (!nombre || !monto) {
+        mostrarNotificacion('Completa todos los campos');
+        return;
+      }
+
+      try {
+        const docRef = await addDoc(collection(db, 'tasas'), {
+          userId: currentUser.uid,
+          nombre: nombre,
+          monto: parseFloat(monto),
+          periodo: periodo,
+          createdAt: new Date()
+        });
+
+        tasas.push({
+          id: docRef.id,
+          nombre: nombre,
+          monto: parseFloat(monto),
+          periodo: periodo
+        });
+
+        renderizarTasas();
+        document.getElementById('nombreTasaInput').value = '';
+        document.getElementById('montoTasaInput').value = '';
+        document.getElementById('nombreTasaInput').focus();
+        mostrarNotificacion('Tasa agregada');
+      } catch (error) {
+        mostrarNotificacion('Error al agregar tasa');
+      }
+    };
+
+    window.eliminarTasa = async function(id) {
+      try {
+        await deleteDoc(doc(db, 'tasas', id));
+        tasas = tasas.filter(t => t.id !== id);
+        tasasSeleccionadas.delete(id);
+        renderizarTasas();
+        actualizarSuma();
+        mostrarNotificacion('Tasa eliminada');
+      } catch (error) {
+        mostrarNotificacion('Error al eliminar tasa');
+      }
+    };
+
+    window.abrirModalEditarTasa = function(tasa) {
+      const modal = document.createElement('div');
+      modal.className = 'modal show';
+      modal.id = 'modalEditarTasa';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <div class="modal-title">Editar Tasa</div>
+            <button class="modal-close" onclick="cerrarModalEditarTasa()">×</button>
+          </div>
+          <div class="add-tasa-form">
+            <div class="form-row" style="grid-template-columns: 1fr;">
+              <input 
+                type="text" 
+                id="editNombreTasa" 
+                class="form-input" 
+                placeholder="Nombre de la tasa"
+                value="${tasa.nombre}"
+              >
+            </div>
+            <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+              <input 
+                type="number" 
+                id="editMontoTasa" 
+                class="form-input" 
+                placeholder="Monto ($)"
+                step="0.01"
+                value="${tasa.monto}"
+              >
+              <select id="editPeriodoTasa" class="form-input">
+                ${periodos.map(p => `<option value="${p}" ${p === tasa.periodo ? 'selected' : ''}>${p}</option>`).join('')}
+              </select>
+            </div>
+            <button class="add-btn" onclick="guardarEdicionTasa('${tasa.id}')">
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    };
+
+    window.cerrarModalEditarTasa = function() {
+      const modal = document.getElementById('modalEditarTasa');
+      if (modal) modal.remove();
+    };
+
+    window.guardarEdicionTasa = async function(id) {
+      const nombre = document.getElementById('editNombreTasa').value.trim();
+      const monto = parseFloat(document.getElementById('editMontoTasa').value);
+      const periodo = parseInt(document.getElementById('editPeriodoTasa').value);
+      
+      if (!nombre || !monto) {
+        mostrarNotificacion('Completa todos los campos');
+        return;
+      }
+      
+      try {
+        await updateDoc(doc(db, 'tasas', id), {
+          nombre: nombre,
+          monto: monto,
+          periodo: periodo
+        });
+
+        const index = tasas.findIndex(t => t.id === id);
+        if (index !== -1) {
+          tasas[index] = { ...tasas[index], nombre, monto, periodo };
+        }
+
+        renderizarTasas();
+        cerrarModalEditarTasa();
+        mostrarNotificacion('Tasa actualizada');
+      } catch (error) {
+        mostrarNotificacion('Error al actualizar tasa');
+      }
+    };
+
+    // PLANTILLAS
+    async function cargarPlantillas() {
+      const q = query(collection(db, 'plantillas'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
+      
+      plantillasPersonalizadas = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        predeterminada: false
+      }));
+      
+      renderizarTodasLasPlantillas();
+    }
+
+    window.agregarPlantillaPersonalizada = async function() {
+      const nombre = document.getElementById('nombrePlantillaInput').value.trim();
+      const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
+      const tipo = document.getElementById('tipoPlantillaSelect').value;
+
+      if (!nombre || !contenido) {
+        mostrarNotificacion('Por favor completa todos los campos');
+        return;
+      }
+
+      try {
+        const docRef = await addDoc(collection(db, 'plantillas'), {
+          userId: currentUser.uid,
+          nombre: nombre,
+          tipo: tipo,
+          contenido: contenido,
+          createdAt: new Date()
+        });
+
+        plantillasPersonalizadas.push({
+          id: docRef.id,
+          nombre: nombre,
+          tipo: tipo,
+          contenido: contenido,
+          predeterminada: false
+        });
+
+        renderizarTodasLasPlantillas();
+        document.getElementById('nombrePlantillaInput').value = '';
+        document.getElementById('contenidoPlantillaInput').value = '';
+        mostrarNotificacion('Plantilla agregada');
+        cambiarTab('plantillas');
+      } catch (error) {
+        mostrarNotificacion('Error al agregar plantilla');
+      }
+    };
+
+    window.eliminarPlantillaPersonalizada = async function(id) {
+      if (!confirm('¿Eliminar esta plantilla?')) return;
+      
+      try {
+        await deleteDoc(doc(db, 'plantillas', id));
+        plantillasPersonalizadas = plantillasPersonalizadas.filter(p => p.id !== id);
+        renderizarTodasLasPlantillas();
+        mostrarNotificacion('Plantilla eliminada');
+      } catch (error) {
+        mostrarNotificacion('Error al eliminar plantilla');
+      }
+    };
+
+    window.guardarEdicionPlantilla = async function() {
+      if (!plantillaEnEdicion) return;
+      
+      const nombre = document.getElementById('editNombrePlantilla').value.trim();
+      const tipo = document.getElementById('editTipoPlantilla').value;
+      const contenido = document.getElementById('editContenidoPlantilla').value.trim();
+      
+      if (!nombre || !contenido) {
+        mostrarNotificacion('Completa todos los campos');
+        return;
+      }
+      
+      try {
+        await updateDoc(doc(db, 'plantillas', plantillaEnEdicion.id), {
+          nombre: nombre,
+          tipo: tipo,
+          contenido: contenido
+        });
+
+        const index = plantillasPersonalizadas.findIndex(p => p.id === plantillaEnEdicion.id);
+        if (index !== -1) {
+          plantillasPersonalizadas[index] = {
+            ...plantillasPersonalizadas[index],
+            nombre, tipo, contenido
+          };
+        }
+
+        renderizarTodasLasPlantillas();
+        cerrarModalEditar();
+        mostrarNotificacion('Plantilla actualizada');
+      } catch (error) {
+        mostrarNotificacion('Error al actualizar plantilla');
+      }
+    };
+
+    // TIPOS
+    async function cargarTipos() {
+      const q = query(collection(db, 'tipos'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        tiposPlantilla = ['reembolso', 'reenvio', 'waiver'];
+        await addDoc(collection(db, 'tipos'), {
+          userId: currentUser.uid,
+          tipos: tiposPlantilla
+        });
+      } else {
+        tiposPlantilla = snapshot.docs[0].data().tipos || ['reembolso', 'reenvio', 'waiver'];
+      }
+      
+      actualizarSelectTipos();
+    }
+
+    window.agregarTipo = async function() {
+      const input = document.getElementById('nuevoTipoInput');
+      const nuevoTipo = input.value.trim().toLowerCase();
+      
+      if (!nuevoTipo) {
+        mostrarNotificacion('Por favor ingresa un nombre');
+        return;
+      }
+      
+      if (tiposPlantilla.includes(nuevoTipo)) {
+        mostrarNotificacion('Este tipo ya existe');
+        return;
+      }
+      
+      tiposPlantilla.push(nuevoTipo);
+      
+      const q = query(collection(db, 'tipos'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
+      await updateDoc(doc(db, 'tipos', snapshot.docs[0].id), {
+        tipos: tiposPlantilla
+      });
+      
+      actualizarSelectTipos();
+      renderizarListaTipos();
+      input.value = '';
+      mostrarNotificacion('Tipo agregado correctamente');
+    };
+
+    window.eliminarTipo = async function(tipo) {
+      if (tiposPlantilla.length <= 1) {
+        mostrarNotificacion('Debe haber al menos un tipo');
+        return;
+      }
+      
+      tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
+      
+      const q = query(collection(db, 'tipos'), where('userId', '==', currentUser.uid));
+      const snapshot = await getDocs(q);
+      await updateDoc(doc(db, 'tipos', snapshot.docs[0].id), {
+        tipos: tiposPlantilla
+      });
+      
+      actualizarSelectTipos();
+      renderizarListaTipos();
+      mostrarNotificacion('Tipo eliminado');
+    };
+
+    // UI FUNCTIONS
+    window.cambiarTab = function(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+    };
+
+    window.cambiarPeriodo = function(periodo) {
       periodoActual = periodo;
       tasasSeleccionadas.clear();
       renderizarBotonesPeriodo();
       renderizarTasas();
       actualizarSuma();
       document.getElementById('periodoActualBadge').textContent = periodo;
-    }
+    };
 
     function renderizarBotonesPeriodo() {
       const container = document.getElementById('periodoButtons');
-      
       container.innerHTML = periodos.map(periodo => `
         <button 
           class="periodo-btn ${periodo === periodoActual ? 'active' : ''}" 
@@ -1222,27 +1736,6 @@ soportereembolsos@ContinentalTravel.com.pe`,
       ).join('');
     }
 
-    // TIPOS
-    function cargarTiposPlantilla() {
-      try {
-        const tiposGuardados = localStorage.getItem('tipos-plantilla');
-        if (tiposGuardados) {
-          tiposPlantilla = JSON.parse(tiposGuardados);
-        }
-      } catch (error) {
-        console.log('Usando tipos predeterminados');
-      }
-      actualizarSelectTipos();
-    }
-
-    function guardarTiposPlantilla() {
-      try {
-        localStorage.setItem('tipos-plantilla', JSON.stringify(tiposPlantilla));
-      } catch (error) {
-        console.error('Error al guardar tipos:', error);
-      }
-    }
-
     function actualizarSelectTipos() {
       const select = document.getElementById('tipoPlantillaSelect');
       const editSelect = document.getElementById('editTipoPlantilla');
@@ -1255,161 +1748,109 @@ soportereembolsos@ContinentalTravel.com.pe`,
       editSelect.innerHTML = options;
     }
 
-    function editarTipos() {
-      renderizarListaTipos();
-      document.getElementById('modalTipos').classList.add('show');
-    }
+    window.toggleSeleccionTasa = function(id) {
+      if (tasasSeleccionadas.has(id)) {
+        tasasSeleccionadas.delete(id);
+      } else {
+        tasasSeleccionadas.add(id);
+      }
+      actualizarSuma();
+    };
 
-    function cerrarModalTipos() {
-      document.getElementById('modalTipos').classList.remove('show');
-    }
-
-    function agregarTipo() {
-      const input = document.getElementById('nuevoTipoInput');
-      const nuevoTipo = input.value.trim().toLowerCase();
+    function actualizarSuma() {
+      const sumaPanel = document.getElementById('sumaTotal');
+      const sumaMonto = document.getElementById('sumaMonto');
       
-      if (!nuevoTipo) {
-        mostrarNotificacion('Por favor ingresa un nombre');
+      let total = 0;
+      tasasSeleccionadas.forEach(id => {
+        const tasa = tasas.find(t => t.id === id);
+        if (tasa) total += tasa.monto;
+      });
+
+      sumaMonto.textContent = '' + total.toFixed(2);
+      sumaPanel.style.display = tasasSeleccionadas.size > 0 ? 'block' : 'none';
+    }
+
+    window.copiarSuma = function() {
+      const sumaMonto = document.getElementById('sumaMonto').textContent.replace(',' , '');
+      copiarTexto(sumaMonto);
+      mostrarNotificacion('Total copiado: ' + sumaMonto);
+    };
+
+    window.limpiarSeleccion = function() {
+      tasasSeleccionadas.clear();
+      renderizarTasas();
+      actualizarSuma();
+      mostrarNotificacion('Selección limpiada');
+    };
+
+    window.usarTasa = function(tasa) {
+      const texto = tasa.monto.toFixed(2);
+      copiarTexto(texto);
+      mostrarNotificacion('Monto copiado: ' + texto);
+    };
+
+    function renderizarTasas() {
+      const lista = document.getElementById('tasasList');
+      const tasasDelPeriodo = tasas.filter(t => t.periodo === periodoActual);
+      
+      if (tasasDelPeriodo.length === 0) {
+        lista.innerHTML = `
+          <div class="empty-state">
+            <p>No hay tasas para ${periodoActual}</p>
+            <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para este año</p>
+          </div>
+        `;
         return;
       }
-      
-      if (tiposPlantilla.includes(nuevoTipo)) {
-        mostrarNotificacion('Este tipo ya existe');
-        return;
-      }
-      
-      tiposPlantilla.push(nuevoTipo);
-      guardarTiposPlantilla();
-      actualizarSelectTipos();
-      renderizarListaTipos();
-      input.value = '';
-      mostrarNotificacion('Tipo agregado correctamente');
-    }
-
-    function eliminarTipo(tipo) {
-      if (tiposPlantilla.length <= 1) {
-        mostrarNotificacion('Debe haber al menos un tipo');
-        return;
-      }
-      
-      tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
-      guardarTiposPlantilla();
-      actualizarSelectTipos();
-      renderizarListaTipos();
-      mostrarNotificacion('Tipo eliminado');
-    }
-
-    function renderizarListaTipos() {
-      const lista = document.getElementById('listaTipos');
-      
-      lista.innerHTML = tiposPlantilla.map(tipo => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
-          <span style="font-weight: 500; color: #2d3748;">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</span>
-          <button class="delete-btn" onclick="eliminarTipo('${tipo}')">Eliminar</button>
+    
+      lista.innerHTML = tasasDelPeriodo.map(tasa => `
+        <div class="tasa-item">
+          <input 
+            type="checkbox" 
+            class="tasa-checkbox" 
+            ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''}
+            onchange="toggleSeleccionTasa('${tasa.id}')"
+          >
+          <div class="tasa-info">
+            <div class="tasa-nombre">${tasa.nombre}</div>
+            <div class="tasa-monto">${tasa.monto.toFixed(2)}</div>
+          </div>
+          <div class="tasa-actions">
+            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">📄</button>
+            <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
+            <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')" title="Eliminar">🗑️</button>
+          </div>
         </div>
       `).join('');
     }
 
-    // PLANTILLAS
-    function cargarPlantillasPersonalizadas() {
-      try {
-        const plantillasGuardadas = localStorage.getItem('plantillas-personalizadas');
-        if (plantillasGuardadas) {
-          plantillasPersonalizadas = JSON.parse(plantillasGuardadas);
-        }
-      } catch (error) {
-        console.log('No hay plantillas personalizadas guardadas');
-      }
-    }
-
-    function guardarPlantillasPersonalizadas() {
-      try {
-        localStorage.setItem('plantillas-personalizadas', JSON.stringify(plantillasPersonalizadas));
-      } catch (error) {
-        console.error('Error al guardar plantillas:', error);
-        mostrarNotificacion('Error al guardar.');
-      }
-    }
-
-    function agregarPlantillaPersonalizada() {
-      const nombre = document.getElementById('nombrePlantillaInput').value.trim();
-      const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
-      const tipo = document.getElementById('tipoPlantillaSelect').value;
-
-      if (!nombre || !contenido) {
-        mostrarNotificacion('Por favor completa todos los campos');
-        return;
-      }
-
-      const nuevaPlantilla = {
-        id: Date.now(),
-        nombre: nombre,
-        tipo: tipo,
-        contenido: contenido,
-        predeterminada: false
-      };
-
-      plantillasPersonalizadas.push(nuevaPlantilla);
-      guardarPlantillasPersonalizadas();
+    window.generarCE2 = function() {
+      let numero;
+      do {
+        numero = Math.floor(Math.random() * 9000000) + 1000000;
+      } while (numero.toString().startsWith('2'));
+      
+      document.getElementById('ce2Input').value = numero;
       renderizarTodasLasPlantillas();
+    };
 
-      document.getElementById('nombrePlantillaInput').value = '';
-      document.getElementById('contenidoPlantillaInput').value = '';
-
-      mostrarNotificacion('Plantilla agregada');
-      cambiarTab('plantillas');
-    }
-
-    function eliminarPlantillaPersonalizada(id) {
-      if (confirm('¿Eliminar esta plantilla?')) {
-        plantillasPersonalizadas = plantillasPersonalizadas.filter(p => p.id !== id);
-        guardarPlantillasPersonalizadas();
-        renderizarTodasLasPlantillas();
-        mostrarNotificacion('Plantilla eliminada');
-      }
-    }
-
-    function abrirModalEditar(plantilla) {
-      plantillaEnEdicion = plantilla;
-      document.getElementById('editNombrePlantilla').value = plantilla.nombre;
-      document.getElementById('editTipoPlantilla').value = plantilla.tipo;
-      document.getElementById('editContenidoPlantilla').value = plantilla.contenido;
-      document.getElementById('modalEditar').classList.add('show');
-    }
-
-    function cerrarModalEditar() {
-      document.getElementById('modalEditar').classList.remove('show');
-      plantillaEnEdicion = null;
-    }
-
-    function guardarEdicionPlantilla() {
-      if (!plantillaEnEdicion) return;
+    window.toggleDropdown = function() {
+      const dropdown = document.getElementById('dropdownContent');
+      const header = document.querySelector('.dropdown-header');
       
-      const nombre = document.getElementById('editNombrePlantilla').value.trim();
-      const tipo = document.getElementById('editTipoPlantilla').value;
-      const contenido = document.getElementById('editContenidoPlantilla').value.trim();
+      isDropdownOpen = !isDropdownOpen;
       
-      if (!nombre || !contenido) {
-        mostrarNotificacion('Completa todos los campos');
-        return;
+      if (isDropdownOpen) {
+        dropdown.classList.add('open');
+        header.classList.add('open');
+      } else {
+        dropdown.classList.remove('open');
+        header.classList.remove('open');
       }
-      
-      const index = plantillasPersonalizadas.findIndex(p => p.id === plantillaEnEdicion.id);
-      if (index !== -1) {
-        plantillasPersonalizadas[index] = {
-          ...plantillasPersonalizadas[index],
-          nombre: nombre,
-          tipo: tipo,
-          contenido: contenido
-        };
-        guardarPlantillasPersonalizadas();
-        renderizarTodasLasPlantillas();
-        cerrarModalEditar();
-        mostrarNotificacion('Plantilla actualizada');
-      }
-    }
+    };
 
-    function copiarPlantilla(plantilla) {
+    window.copiarPlantilla = function(plantilla) {
       const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
       const ce2 = document.getElementById('ce2Input').value;
       
@@ -1417,19 +1858,10 @@ soportereembolsos@ContinentalTravel.com.pe`,
         .replace(/{RUTA}/g, ruta)
         .replace(/{CE2}/g, ce2);
       
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(textoFinal)
-          .then(() => {
-            mostrarNotificacion('Plantilla copiada');
-            generarCE2();
-          })
-          .catch(() => {
-            copiarTextoFallback(textoFinal);
-          });
-      } else {
-        copiarTextoFallback(textoFinal);
-      }
-    }
+      copiarTexto(textoFinal);
+      mostrarNotificacion('Plantilla copiada');
+      generarCE2();
+    };
 
     function renderizarTodasLasPlantillas() {
       const grid = document.getElementById('templatesGrid');
@@ -1465,7 +1897,7 @@ soportereembolsos@ContinentalTravel.com.pe`,
               ${puedeEditar ? `
                 <div class="template-actions">
                   <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>✏️</button>
-                  <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada(${plantilla.id})">🗑️</button>
+                  <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
                 </div>
               ` : ''}
             </div>
@@ -1476,219 +1908,66 @@ soportereembolsos@ContinentalTravel.com.pe`,
       }).join('');
     }
 
-    // TASAS
-    function cargarTasas() {
-      try {
-        const tasasGuardadas = localStorage.getItem('tasas-guardadas');
-        if (tasasGuardadas) {
-          let tasasParsed = JSON.parse(tasasGuardadas);
-          
-          // Agregar periodo a tasas antiguas
-          tasas = tasasParsed.map(tasa => {
-            if (!tasa.periodo) {
-              // Si la tasa no tiene periodo, asignarle el periodo actual
-              return { ...tasa, periodo: periodoActual };
-            }
-            return tasa;
-          });
-          
-          // Guardar las tasas migradas
-          guardarTasas();
-          renderizarTasas();
-          
-          console.log('Tasas cargadas:', tasas.length);
-        }
-      } catch (error) {
-        console.log('No hay tasas guardadas');
-      }
-    }
+    // MODALS
+    window.abrirModalPeriodo = function() {
+      renderizarListaPeriodos();
+      document.getElementById('modalPeriodo').classList.add('show');
+    };
 
-function migrarTasasAntiguasAPeriodos() {
-  try {
-    const tasasGuardadas = localStorage.getItem('tasas-guardadas');
-    if (tasasGuardadas) {
-      let tasasParsed = JSON.parse(tasasGuardadas);
-      let necesitaMigracion = false;
+    window.cerrarModalPeriodo = function() {
+      document.getElementById('modalPeriodo').classList.remove('show');
+    };
+
+    function renderizarListaPeriodos() {
+      const lista = document.getElementById('listaPeriodos');
       
-      // Verificar si hay tasas sin periodo
-      tasasParsed = tasasParsed.map(tasa => {
-        if (!tasa.periodo) {
-          necesitaMigracion = true;
-          return { ...tasa, periodo: periodoActual };
-        }
-        return tasa;
-      });
-      
-      if (necesitaMigracion) {
-        tasas = tasasParsed;
-        guardarTasas();
-        console.log('Tasas migradas a sistema de períodos');
-      }
-    }
-  } catch (error) {
-    console.error('Error al migrar tasas:', error);
-  }
-}
-    
-    function guardarTasas() {
-      try {
-        localStorage.setItem('tasas-guardadas', JSON.stringify(tasas));
-      } catch (error) {
-        console.error('Error al guardar tasas:', error);
-      }
-    }
-
-    function agregarTasa() {
-      const nombre = document.getElementById('nombreTasaInput').value.trim();
-      const monto = document.getElementById('montoTasaInput').value.trim();
-      const periodo = parseInt(document.getElementById('periodoTasaInput').value);
-
-      if (!nombre || !monto) {
-        mostrarNotificacion('Completa todos los campos');
-        return;
-      }
-
-      const nuevaTasa = {
-        id: Date.now(),
-        nombre: nombre,
-        monto: parseFloat(monto),
-        periodo: periodo
-      };
-
-      tasas.push(nuevaTasa);
-      guardarTasas();
-      renderizarTasas();
-
-      document.getElementById('nombreTasaInput').value = '';
-      document.getElementById('montoTasaInput').value = '';
-      document.getElementById('nombreTasaInput').focus();
-
-      mostrarNotificacion('Tasa agregada');
-    }
-
-    function eliminarTasa(id) {
-      tasas = tasas.filter(t => t.id !== id);
-      tasasSeleccionadas.delete(id);
-      guardarTasas();
-      renderizarTasas();
-      actualizarSuma();
-      mostrarNotificacion('Tasa eliminada');
-    }
-
-    function toggleSeleccionTasa(id) {
-      if (tasasSeleccionadas.has(id)) {
-        tasasSeleccionadas.delete(id);
-      } else {
-        tasasSeleccionadas.add(id);
-      }
-      actualizarSuma();
-    }
-
-    function actualizarSuma() {
-      const sumaPanel = document.getElementById('sumaTotal');
-      const sumaMonto = document.getElementById('sumaMonto');
-      
-      let total = 0;
-      tasasSeleccionadas.forEach(id => {
-        const tasa = tasas.find(t => t.id === id);
-        if (tasa) {
-          total += tasa.monto;
-        }
-      });
-
-      sumaMonto.textContent = '' + total.toFixed(2);
-      
-      sumaPanel.style.display = tasasSeleccionadas.size > 0 ? 'block' : 'none';
-    }
-
-    function copiarSuma() {
-      const sumaMonto = document.getElementById('sumaMonto').textContent.replace(',','');
-      
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(sumaMonto)
-          .then(() => mostrarNotificacion('Total copiado: ' + sumaMonto))
-          .catch(() => copiarTextoFallback(sumaMonto));
-      } else {
-        copiarTextoFallback(sumaMonto);
-      }
-    }
-
-    function limpiarSeleccion() {
-      tasasSeleccionadas.clear();
-      renderizarTasas();
-      actualizarSuma();
-      mostrarNotificacion('Selección limpiada');
-    }
-
-    function usarTasa(tasa) {
-      const texto = tasa.monto.toFixed(2);
-      
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(texto)
-          .then(() => mostrarNotificacion('Monto copiado: ' + texto)).catch(() => copiarTextoFallback(texto));
-      } else {
-        copiarTextoFallback(texto);
-      }
-    }
-
-    function renderizarTasas() {
-      const lista = document.getElementById('tasasList');
-      const tasasDelPeriodo = tasas.filter(t => t.periodo === periodoActual);
-      
-      if (tasasDelPeriodo.length === 0) {
-        lista.innerHTML = `
-          <div class="empty-state">
-            <p>No hay tasas para ${periodoActual}</p>
-            <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para este año</p>
-          </div>
-        `;
-        return;
-      }
-    
-      lista.innerHTML = tasasDelPeriodo.map(tasa => `
-        <div class="tasa-item">
-          <input 
-            type="checkbox" 
-            class="tasa-checkbox" 
-            ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''}
-            onchange="toggleSeleccionTasa(${tasa.id})"
-          >
-          <div class="tasa-info">
-            <div class="tasa-nombre">${tasa.nombre}</div>
-            <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
-          </div>
-          <div class="tasa-actions">
-            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">📄</button>
-            <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
-            <button class="delete-btn" onclick="eliminarTasa(${tasa.id})" title="Eliminar">🗑️</button>
-          </div>
+      lista.innerHTML = periodos.map(periodo => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+          <span style="font-weight: 500; color: #2d3748;">${periodo}</span>
+          <button class="delete-btn" onclick="eliminarPeriodo(${periodo})">Eliminar</button>
         </div>
       `).join('');
     }
 
-    // UTILIDADES
-    function generarCE2() {
-      let numero;
-      do {
-        numero = Math.floor(Math.random() * 9000000) + 1000000;
-      } while (numero.toString().startsWith('2'));
+    window.editarTipos = function() {
+      renderizarListaTipos();
+      document.getElementById('modalTipos').classList.add('show');
+    };
+
+    window.cerrarModalTipos = function() {
+      document.getElementById('modalTipos').classList.remove('show');
+    };
+
+    function renderizarListaTipos() {
+      const lista = document.getElementById('listaTipos');
       
-      document.getElementById('ce2Input').value = numero;
-      renderizarTodasLasPlantillas();
+      lista.innerHTML = tiposPlantilla.map(tipo => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+          <span style="font-weight: 500; color: #2d3748;">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</span>
+          <button class="delete-btn" onclick="eliminarTipo('${tipo}')">Eliminar</button>
+        </div>
+      `).join('');
     }
 
-    function toggleDropdown() {
-      const dropdown = document.getElementById('dropdownContent');
-      const header = document.querySelector('.dropdown-header');
-      
-      isDropdownOpen = !isDropdownOpen;
-      
-      if (isDropdownOpen) {
-        dropdown.classList.add('open');
-        header.classList.add('open');
+    window.abrirModalEditar = function(plantilla) {
+      plantillaEnEdicion = plantilla;
+      document.getElementById('editNombrePlantilla').value = plantilla.nombre;
+      document.getElementById('editTipoPlantilla').value = plantilla.tipo;
+      document.getElementById('editContenidoPlantilla').value = plantilla.contenido;
+      document.getElementById('modalEditar').classList.add('show');
+    };
+
+    window.cerrarModalEditar = function() {
+      document.getElementById('modalEditar').classList.remove('show');
+      plantillaEnEdicion = null;
+    };
+
+    // UTILITIES
+    function copiarTexto(texto) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(texto).catch(() => copiarTextoFallback(texto));
       } else {
-        dropdown.classList.remove('open');
-        header.classList.remove('open');
+        copiarTextoFallback(texto);
       }
     }
 
@@ -1702,9 +1981,8 @@ function migrarTasasAntiguasAPeriodos() {
       
       try {
         document.execCommand('copy');
-        mostrarNotificacion('Texto copiado');
       } catch (err) {
-        alert('Error al copiar');
+        console.error('Error al copiar');
       } finally {
         document.body.removeChild(textArea);
       }
@@ -1717,84 +1995,23 @@ function migrarTasasAntiguasAPeriodos() {
       
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
-    
-    //editar periodo de las tasas 
-    function abrirModalEditarTasa(tasa) {
-      const modal = document.createElement('div');
-      modal.className = 'modal show';
-      modal.id = 'modalEditarTasa';
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <div class="modal-title">Editar Tasa</div>
-            <button class="modal-close" onclick="cerrarModalEditarTasa()">×</button>
-          </div>
-          <div class="add-tasa-form">
-            <div class="form-row" style="grid-template-columns: 1fr;">
-              <input 
-                type="text" 
-                id="editNombreTasa" 
-                class="form-input" 
-                placeholder="Nombre de la tasa"
-                value="${tasa.nombre}"
-              >
-            </div>
-            <div class="form-row" style="grid-template-columns: 1fr 1fr;">
-              <input 
-                type="number" 
-                id="editMontoTasa" 
-                class="form-input" 
-                placeholder="Monto ($)"
-                step="0.01"
-                value="${tasa.monto}"
-              >
-              <select id="editPeriodoTasa" class="form-input">
-                ${periodos.map(p => `<option value="${p}" ${p === tasa.periodo ? 'selected' : ''}>${p}</option>`).join('')}
-              </select>
-            </div>
-            <button class="add-btn" onclick="guardarEdicionTasa(${tasa.id})">
-              Guardar Cambios
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-    
-    function cerrarModalEditarTasa() {
-      const modal = document.getElementById('modalEditarTasa');
-      if (modal) {
-        modal.remove();
-      }
-    }
-    
-    function guardarEdicionTasa(id) {
-      const nombre = document.getElementById('editNombreTasa').value.trim();
-      const monto = parseFloat(document.getElementById('editMontoTasa').value);
-      const periodo = parseInt(document.getElementById('editPeriodoTasa').value);
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function(){
+      document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
       
-      if (!nombre || !monto) {
-        mostrarNotificacion('Completa todos los campos');
-        return;
-      }
-      
-      const index = tasas.findIndex(t => t.id === id);
-      if (index !== -1) {
-        tasas[index] = {
-          ...tasas[index],
-          nombre: nombre,
-          monto: monto,
-          periodo: periodo
-        };
-        guardarTasas();
-        renderizarTasas();
-        cerrarModalEditarTasa();
-        mostrarNotificacion('Tasa actualizada');
-      }
-    }
+      document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          agregarTasa();
+        }
+      });
+
+      document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          login();
+        }
+      });
+    });
   </script>
 </body>
 </html>
-
-
-
