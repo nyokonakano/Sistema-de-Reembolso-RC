@@ -1553,37 +1553,33 @@ soportereembolsos@ContinentalTravel.com.pe`,
       const nombre = document.getElementById('nombrePlantillaInput').value.trim();
       const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
       const tipo = document.getElementById('tipoPlantillaSelect').value;
-
+    
       if (!nombre || !contenido) {
         mostrarNotificacion('Por favor completa todos los campos');
         return;
       }
-
-      try {
-        const docRef = await addDoc(collection(db, 'plantillas'), {
-          userId: currentUser.uid,
-          nombre: nombre,
-          tipo: tipo,
-          contenido: contenido,
-          createdAt: new Date()
-        });
-
-        plantillasPersonalizadas.push({
-          id: docRef.id,
-          nombre: nombre,
-          tipo: tipo,
-          contenido: contenido,
-          predeterminada: false
-        });
-
-        renderizarTodasLasPlantillas();
-        document.getElementById('nombrePlantillaInput').value = '';
-        document.getElementById('contenidoPlantillaInput').value = '';
-        mostrarNotificacion('Plantilla agregada');
-        cambiarTab('plantillas');
-      } catch (error) {
-        mostrarNotificacion('Error al agregar plantilla');
-      }
+    
+      const docRef = await addDoc(collection(db, 'plantillas'), {
+        userId: currentUser.uid,
+        nombre: nombre,
+        tipo: tipo,
+        contenido: contenido,
+        createdAt: new Date()
+      });
+    
+      plantillasPersonalizadas.push({
+        id: docRef.id,
+        nombre: nombre,
+        tipo: tipo,
+        contenido: contenido,
+        predeterminada: false
+      });
+    
+      renderizarTodasLasPlantillas();
+      document.getElementById('nombrePlantillaInput').value = '';
+      document.getElementById('contenidoPlantillaInput').value = '';
+      mostrarNotificacion('Plantilla agregada correctamente ✓');
+      cambiarTab('plantillas');
     };
 
     window.eliminarPlantillaPersonalizada = async function(id) {
@@ -2015,3 +2011,4 @@ soportereembolsos@ContinentalTravel.com.pe`,
   </script>
 </body>
 </html>
+
