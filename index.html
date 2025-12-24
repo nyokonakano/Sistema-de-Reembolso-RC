@@ -1700,7 +1700,15 @@ soportereembolsos@ContinentalTravel.com.pe`,
       document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
       
-      event.target.classList.add('active');
+      // Buscar el botón de la pestaña y activarlo
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(tab => {
+        if (tab.textContent.toLowerCase().includes(tabName.toLowerCase()) || 
+            tab.onclick.toString().includes(tabName)) {
+          tab.classList.add('active');
+        }
+      });
+      
       document.getElementById(`tab-${tabName}`).classList.add('active');
     };
 
@@ -2011,4 +2019,5 @@ soportereembolsos@ContinentalTravel.com.pe`,
   </script>
 </body>
 </html>
+
 
