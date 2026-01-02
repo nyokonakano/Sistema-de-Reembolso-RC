@@ -1316,176 +1316,182 @@ soportereembolsos@ContinentalTravel.com.pe`,
       }
     }
 
-    function activarListenersRealTime(){
-      //LISTENERS PARA LAS TAXAS
-      const qtasas = query(collection(db, 'tasas'));
-      onSnapshot(qtasas, (snapshot) => {
-        tasas = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        renderizarTsasas();
-        actualizarSuma();
-      });
-
-      //LISTENERS PARA PLANTILLAS
-      const qPlantillas = query(collection(db, 'plantillas'));
-      onSnapshot(qPlantillas, (snapshot) => {
-        plantillasPersonalizadas = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          predeterminada: false
-        }));
-        renderizarTodasLasPlantillas();
-      });
-
-      //LISTENERS PARA PREIODOS
-      const qPeriodos = query(collection(db, 'periodos'));
-      onSnapshot(qPeriodos, (snapshot) => {
-        if (!snapshot.empty) {
-          periodos = snapshot.docs[0].data().periodos || [new Date().getFullYear()];
-          renderizarBotonesPeriodo();
-          actualizarSelectPeriodo();
-        }
-      });
-
-      //LISTENERS PARA TIPOS
-      const qTipos = query(collection(db, 'tipos'));
-      onSnapshot(qTipos, (snapshot) => {
-        if (!snapshot.empty) {
-          tiposPlantilla = snapshot.docs[0].data().tipos || ['reembolso', 'reenvio', 'waiver'];
-          actualizarSelectTipos();
-        }
-      });
+// LISTENERS EN TIEMPO REAL
+function activarListenersRealTime() {
+  // Listener para TASAS
+  onSnapshot(collection(db, 'tasas'), (snapshot) => {
+    tasas = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    renderizarTasas();
+    actualizarSuma();
+  });
+  
+  // Listener para PLANTILLAS
+  onSnapshot(collection(db, 'plantillas'), (snapshot) => {
+    plantillasPersonalizadas = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      predeterminada: false
+    }));
+    renderizarTodasLasPlantillas();
+  });
+  
+  // Listener para PERÍODOS
+  onSnapshot(collection(db, 'periodos'), (snapshot) => {
+    if (!snapshot.empty) {
+      periodos = snapshot.docs[0].data().periodos || [new Date().getFullYear()];
+      window.periodoDocId = snapshot.docs[0].id;
+      renderizarBotonesPeriodo();
+      actualizarSelectPeriodo();
     }
+  });
+  
+  // Listener para TIPOS
+  onSnapshot(collection(db, 'tipos'), (snapshot) => {
+    if (!snapshot.empty) {
+      tiposPlantilla = snapshot.docs[0].data().tipos || ['reembolso', 'reenvio', 'waiver'];
+      window.tiposDocId = snapshot.docs[0].id;
+      actualizarSelectTipos();
+    }
+  });
+}
 
     // PERÍODOS
     async function cargarPeriodos() {
-      const q = query(collection(db, 'periodos'));
-      const snapshot = await getDocs(q);
-      
-      if (snapshot.empty) {
-        const anioActual = new Date().getFullYear();
-        periodos = [anioActual];
-        periodoActual = anioActual;
-        await addDoc(collection(db, 'periodos'), {
-          periodos: periodos,
-          createdBy: currentUser.email,
-          createdAt: new Date()
-        });
-      } else {
-        periodos = snapshot.docs[0].data().periodos || [new Date().getFullYear()];
-        periodoActual = periodos[0];
-        window.periodoDocId = snapshot.docs[0].id; // Guardar el ID del documento
-      }
-      
-      renderizarBotonesPeriodo();
-      actualizarSelectPeriodo();
+        const snapshot = await getDocs(collection(db, 'periodos'));
+  
+  if (snapshot.empty) {
+    const anioActual = new Date().getFullYear();
+    periodos = [anioActual];
+    periodoActual = anioActual;
+    const docRef = await addDoc(collection(db, 'periodos'), {
+      periodos: periodos,
+      createdBy: currentUser.email,
+      createdAt: new Date()
+    });
+    window.periodoDocId = docRef.id;
+  } else {
+    periodos = snapshot.docs[0].data().periodos || [new Date().getFullYear()];
+    periodoActual = periodos[0];
+    window.periodoDocId = snapshot.docs[0].id;
+  }
+  
+  renderizarBotonesPeriodo();
+  actualizarSelectPeriodo();
     }
 
     window.agregarPeriodo = async function() {
       const input = document.getElementById('nuevoPeriodoInput');
-      const nuevoPeriodo = parseInt(input.value);
-      
-      if (!nuevoPeriodo || nuevoPeriodo < 2000 || nuevoPeriodo > 2100) {
-        mostrarNotificacion('Por favor ingresa un año válido');
-        return;
-      }
-      
-      if (periodos.includes(nuevoPeriodo)) {
-        mostrarNotificacion('Este año ya existe');
-        return;
-      }
-      
-      periodos.push(nuevoPeriodo);
-      periodos.sort((a, b) => b - a);
-      
-      await updateDoc(doc(db, 'periodos', window.periodoDocId), {
-        periodos: periodos,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
-      });
-      
-      input.value = '';
-      mostrarNotificacion('Año agregado - visible para todos ✓');
+  const nuevoPeriodo = parseInt(input.value);
+  
+  if (!nuevoPeriodo || nuevoPeriodo < 2000 || nuevoPeriodo > 2100) {
+    mostrarNotificacion('Por favor ingresa un año válido');
+    return;
+  }
+  
+  if (periodos.includes(nuevoPeriodo)) {
+    mostrarNotificacion('Este año ya existe');
+    return;
+  }
+  
+  periodos.push(nuevoPeriodo);
+  periodos.sort((a, b) => b - a);
+  
+  await updateDoc(doc(db, 'periodos', window.periodoDocId), {
+    periodos: periodos,
+    lastModifiedBy: currentUser.email,
+    lastModifiedAt: new Date()
+  });
+  
+  renderizarBotonesPeriodo();
+  actualizarSelectPeriodo();
+  renderizarListaPeriodos();
+  input.value = '';
+  mostrarNotificacion('Año agregado - visible para todos ✓');
     };
 
     window.eliminarPeriodo = async function(periodo) {
       if (periodos.length <= 1) {
-        mostrarNotificacion('Debe haber al menos un año');
-        return;
-      }
+    mostrarNotificacion('Debe haber al menos un año');
+    return;
+  }
 
-      const tasasDelPeriodo = tasas.filter(t => t.periodo === periodo);
-      if (tasasDelPeriodo.length > 0) {
-        if (!confirm(`Este año tiene ${tasasDelPeriodo.length} tasa(s). ¿Deseas eliminarlo de todos modos?`)) {
-          return;
-        }
-      }
-      
-      periodos = periodos.filter(p => p !== periodo);
-      
-      if (periodoActual === periodo) {
-        periodoActual = periodos[0];
-      }
-      
-      await updateDoc(doc(db, 'periodos', window.periodoDocId), {
-        periodos: periodos,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
-      });
-      
-      mostrarNotificacion('Año eliminado - cambio visible para todos ✓');
-    };
+  const tasasDelPeriodo = tasas.filter(t => t.periodo === periodo);
+  if (tasasDelPeriodo.length > 0) {
+    if (!confirm(`Este año tiene ${tasasDelPeriodo.length} tasa(s). ¿Deseas eliminarlo de todos modos?`)) {
+      return;
+    }
+  }
+  
+  periodos = periodos.filter(p => p !== periodo);
+  
+  if (periodoActual === periodo) {
+    periodoActual = periodos[0];
+  }
+  
+  await updateDoc(doc(db, 'periodos', window.periodoDocId), {
+    periodos: periodos,
+    lastModifiedBy: currentUser.email,
+    lastModifiedAt: new Date()
+  });
+  
+  renderizarBotonesPeriodo();
+  actualizarSelectPeriodo();
+  renderizarListaPeriodos();
+  renderizarTasas();
+  mostrarNotificacion('Año eliminado - cambio visible para todos ✓');
+};
 
     // TASAS
     async function cargarTasas() {
-      const q = query(collection(db, 'tasas'));
-      const snapshot = await getDocs(q);
-      
-      tasas = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      renderizarTasas();
+const snapshot = await getDocs(collection(db, 'tasas'));
+  
+  tasas = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+  
+  renderizarTasas();
     }
 
     window.agregarTasa = async function() {
       const nombre = document.getElementById('nombreTasaInput').value.trim();
-      const monto = document.getElementById('montoTasaInput').value.trim();
-      const periodo = parseInt(document.getElementById('periodoTasaInput').value);
+  const monto = document.getElementById('montoTasaInput').value.trim();
+  const periodo = parseInt(document.getElementById('periodoTasaInput').value);
 
-      if (!nombre || !monto) {
-        mostrarNotificacion('Completa todos los campos');
-        return;
-      }
+  if (!nombre || !monto) {
+    mostrarNotificacion('Completa todos los campos');
+    return;
+  }
 
-      await addDoc(collection(db, 'tasas'), {
-        nombre: nombre,
-        monto: parseFloat(monto),
-        periodo: periodo,
-        createdBy: currentUser.email,
-        createdAt: new Date()
-      });
+  try {
+    await addDoc(collection(db, 'tasas'), {
+      nombre: nombre,
+      monto: parseFloat(monto),
+      periodo: periodo,
+      createdBy: currentUser.email,
+      createdAt: new Date()
+    });
 
-      document.getElementById('nombreTasaInput').value = '';
-      document.getElementById('montoTasaInput').value = '';
-      document.getElementById('nombreTasaInput').focus();
-      mostrarNotificacion('Tasa agregada - visible para todos ✓');
+    document.getElementById('nombreTasaInput').value = '';
+    document.getElementById('montoTasaInput').value = '';
+    document.getElementById('nombreTasaInput').focus();
+    mostrarNotificacion('Tasa agregada - visible para todos ✓');
+  } catch (error) {
+    console.error('Error:', error);
+    mostrarNotificacion('Error al agregar tasa');
+  }
     };
 
     window.eliminarTasa = async function(id) {
       try {
-        await deleteDoc(doc(db, 'tasas', id));
-        tasas = tasas.filter(t => t.id !== id);
-        tasasSeleccionadas.delete(id);
-        renderizarTasas();
-        actualizarSuma();
-        mostrarNotificacion('Tasa eliminada');
-      } catch (error) {
-        mostrarNotificacion('Error al eliminar tasa');
-      }
+    await deleteDoc(doc(db, 'tasas', id));
+    mostrarNotificacion('Tasa eliminada - cambio visible para todos ✓');
+  } catch (error) {
+    mostrarNotificacion('Error al eliminar tasa');
+  }
     };
 
     window.abrirModalEditarTasa = function(tasa) {
@@ -1537,177 +1543,171 @@ soportereembolsos@ContinentalTravel.com.pe`,
 
     window.guardarEdicionTasa = async function(id) {
       const nombre = document.getElementById('editNombreTasa').value.trim();
-      const monto = parseFloat(document.getElementById('editMontoTasa').value);
-      const periodo = parseInt(document.getElementById('editPeriodoTasa').value);
-      
-      if (!nombre || !monto) {
-        mostrarNotificacion('Completa todos los campos');
-        return;
-      }
-      
-      await updateDoc(doc(db, 'tasas', id), {
-        nombre: nombre,
-        monto: monto,
-        periodo: periodo,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
-      });
+  const monto = parseFloat(document.getElementById('editMontoTasa').value);
+  const periodo = parseInt(document.getElementById('editPeriodoTasa').value);
+  
+  if (!nombre || !monto) {
+    mostrarNotificacion('Completa todos los campos');
+    return;
+  }
+  
+  try {
+    await updateDoc(doc(db, 'tasas', id), {
+      nombre: nombre,
+      monto: monto,
+      periodo: periodo,
+      lastModifiedBy: currentUser.email,
+      lastModifiedAt: new Date()
+    });
 
-      cerrarModalEditarTasa();
-      mostrarNotificacion('Tasa actualizada - cambio visible para todos ✓');
+    cerrarModalEditarTasa();
+    mostrarNotificacion('Tasa actualizada - cambio visible para todos ✓');
+  } catch (error) {
+    mostrarNotificacion('Error al actualizar tasa');
+  }
     };
 
     // PLANTILLAS
     async function cargarPlantillas() {
-      const q = query(collection(db, 'plantillas'));
-      const snapshot = await getDocs(q);
-      
-      plantillasPersonalizadas = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        predeterminada: false
-      }));
-      
-      renderizarTodasLasPlantillas();
+      const snapshot = await getDocs(collection(db, 'plantillas'));
+  
+  plantillasPersonalizadas = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    predeterminada: false
+  }));
+  
+  renderizarTodasLasPlantillas();
     }
 
     window.agregarPlantillaPersonalizada = async function() {
-      const nombre = document.getElementById('nombrePlantillaInput').value.trim();
-      const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
-      const tipo = document.getElementById('tipoPlantillaSelect').value;
+        const nombre = document.getElementById('nombrePlantillaInput').value.trim();
+  const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
+  const tipo = document.getElementById('tipoPlantillaSelect').value;
 
-      if (!nombre || !contenido) {
-        mostrarNotificacion('Por favor completa todos los campos');
-        return;
-      }
+  if (!nombre || !contenido) {
+    mostrarNotificacion('Por favor completa todos los campos');
+    return;
+  }
 
-      await addDoc(collection(db, 'plantillas'), {
-        nombre: nombre,
-        tipo: tipo,
-        contenido: contenido,
-        createdBy: currentUser.email,
-        createdAt: new Date()
-      });
+  await addDoc(collection(db, 'plantillas'), {
+    nombre: nombre,
+    tipo: tipo,
+    contenido: contenido,
+    createdBy: currentUser.email,
+    createdAt: new Date()
+  });
 
-      document.getElementById('nombrePlantillaInput').value = '';
-      document.getElementById('contenidoPlantillaInput').value = '';
-      mostrarNotificacion('Plantilla agregada - visible para todos ✓');
-      cambiarTab('plantillas');
+  document.getElementById('nombrePlantillaInput').value = '';
+  document.getElementById('contenidoPlantillaInput').value = '';
+  mostrarNotificacion('Plantilla agregada - visible para todos ✓');
+  cambiarTab('plantillas');
     };
 
     window.eliminarPlantillaPersonalizada = async function(id) {
-      if (tiposPlantilla.length <= 1) {
-        mostrarNotificacion('Debe haber al menos un tipo');
-        return;
-      }
-      
-      tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
-      
-      await updateDoc(doc(db, 'tipos', window.tiposDocId), {
-        tipos: tiposPlantilla,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
-      });
-      
-      mostrarNotificacion('Tipo eliminado - cambio visible para todos ✓');
+      if (!confirm('¿Eliminar esta plantilla?')) return;
+  
+  try {
+    await deleteDoc(doc(db, 'plantillas', id));
+    mostrarNotificacion('Plantilla eliminada - cambio visible para todos ✓');
+  } catch (error) {
+    mostrarNotificacion('Error al eliminar plantilla');
+  }
     };
 
     window.guardarEdicionPlantilla = async function() {
       if (!plantillaEnEdicion) return;
   
-      const nombre = document.getElementById('editNombrePlantilla').value.trim();
-      const tipo = document.getElementById('editTipoPlantilla').value;
-      const contenido = document.getElementById('editContenidoPlantilla').value.trim();
-      
-      if (!nombre || !contenido) {
-        mostrarNotificacion('Completa todos los campos');
-        return;
-      }
-      
-      await updateDoc(doc(db, 'plantillas', plantillaEnEdicion.id), {
-        nombre: nombre,
-        tipo: tipo,
-        contenido: contenido,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
-      });
+  const nombre = document.getElementById('editNombrePlantilla').value.trim();
+  const tipo = document.getElementById('editTipoPlantilla').value;
+  const contenido = document.getElementById('editContenidoPlantilla').value.trim();
+  
+  if (!nombre || !contenido) {
+    mostrarNotificacion('Completa todos los campos');
+    return;
+  }
+  
+  try {
+    await updateDoc(doc(db, 'plantillas', plantillaEnEdicion.id), {
+      nombre: nombre,
+      tipo: tipo,
+      contenido: contenido,
+      lastModifiedBy: currentUser.email,
+      lastModifiedAt: new Date()
+    });
 
-      cerrarModalEditar();
-      mostrarNotificacion('Plantilla actualizada - cambio visible para todos ✓');
+    cerrarModalEditar();
+    mostrarNotificacion('Plantilla actualizada - cambio visible para todos ✓');
+  } catch (error) {
+    mostrarNotificacion('Error al actualizar plantilla');
+  }
     };
 
     // TIPOS
     async function cargarTipos() {
-      const input = document.getElementById('nuevoTipoInput');
-      const nuevoTipo = input.value.trim().toLowerCase();
-      
-      if (!nuevoTipo) {
-        mostrarNotificacion('Por favor ingresa un nombre');
-        return;
-      }
-      
-      if (tiposPlantilla.includes(nuevoTipo)) {
-        mostrarNotificacion('Este tipo ya existe');
-        return;
-      }
-      
-      tiposPlantilla.push(nuevoTipo);
-      
-      await updateDoc(doc(db, 'tipos', window.tiposDocId), {
-        tipos: tiposPlantilla,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
-      });
-      
-      input.value = '';
-      mostrarNotificacion('Tipo agregado - visible para todos ✓');
+      const snapshot = await getDocs(collection(db, 'tipos'));
+  
+  if (snapshot.empty) {
+    tiposPlantilla = ['reembolso', 'reenvio', 'waiver'];
+    const docRef = await addDoc(collection(db, 'tipos'), {
+      tipos: tiposPlantilla,
+      createdBy: currentUser.email,
+      createdAt: new Date()
+    });
+    window.tiposDocId = docRef.id;
+  } else {
+    tiposPlantilla = snapshot.docs[0].data().tipos || ['reembolso', 'reenvio', 'waiver'];
+    window.tiposDocId = snapshot.docs[0].id;
+  }
+  
+  actualizarSelectTipos();
     }
 
     window.agregarTipo = async function() {
       const input = document.getElementById('nuevoTipoInput');
-      const nuevoTipo = input.value.trim().toLowerCase();
-      
-      if (!nuevoTipo) {
-        mostrarNotificacion('Por favor ingresa un nombre');
-        return;
-      }
-      
-      if (tiposPlantilla.includes(nuevoTipo)) {
-        mostrarNotificacion('Este tipo ya existe');
-        return;
-      }
-      
-      tiposPlantilla.push(nuevoTipo);
-      
-      const q = query(collection(db, 'tipos'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
-      await updateDoc(doc(db, 'tipos', snapshot.docs[0].id), {
-        tipos: tiposPlantilla
-      });
-      
-      actualizarSelectTipos();
-      renderizarListaTipos();
-      input.value = '';
-      mostrarNotificacion('Tipo agregado correctamente');
-    };
+  const nuevoTipo = input.value.trim().toLowerCase();
+  
+  if (!nuevoTipo) {
+    mostrarNotificacion('Por favor ingresa un nombre');
+    return;
+  }
+  
+  if (tiposPlantilla.includes(nuevoTipo)) {
+    mostrarNotificacion('Este tipo ya existe');
+    return;
+  }
+  
+  tiposPlantilla.push(nuevoTipo);
+  
+  await updateDoc(doc(db, 'tipos', window.tiposDocId), {
+    tipos: tiposPlantilla,
+    lastModifiedBy: currentUser.email,
+    lastModifiedAt: new Date()
+  });
+  
+  actualizarSelectTipos();
+  renderizarListaTipos();
+  input.value = '';
+  mostrarNotificacion('Tipo agregado - visible para todos ✓');
+};
 
     window.eliminarTipo = async function(tipo) {
       if (tiposPlantilla.length <= 1) {
-        mostrarNotificacion('Debe haber al menos un tipo');
-        return;
-      }
-      
-      tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
-      
-      const q = query(collection(db, 'tipos'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
-      await updateDoc(doc(db, 'tipos', snapshot.docs[0].id), {
-        tipos: tiposPlantilla
-      });
-      
-      actualizarSelectTipos();
-      renderizarListaTipos();
-      mostrarNotificacion('Tipo eliminado');
+    mostrarNotificacion('Debe haber al menos un tipo');
+    return;
+  }
+  
+  tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
+  
+  await updateDoc(doc(db, 'tipos', window.tiposDocId), {
+    tipos: tiposPlantilla,
+    lastModifiedBy: currentUser.email,
+    lastModifiedAt: new Date()
+  });
+  
+  actualizarSelectTipos();
+  renderizarListaTipos();
+  mostrarNotificacion('Tipo eliminado - cambio visible para todos ✓');
     };
 
     // UI FUNCTIONS
@@ -2034,3 +2034,4 @@ soportereembolsos@ContinentalTravel.com.pe`,
   </script>
 </body>
 </html>
+
