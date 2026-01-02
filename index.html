@@ -1300,21 +1300,68 @@ soportereembolsos@ContinentalTravel.com.pe`,
     // FIRESTORE FUNCTIONS
     async function cargarDatosFirebase() {
       try {
+        //CARGAR DATOSD INICIALES
         await Promise.all([
-          cargarPeriodos(),
+          caragarPeriodos(),
           cargarTasas(),
           cargarPlantillas(),
           cargarTipos()
         ]);
+        
+        //ACTIVAR LISTENERS
+        activarListenersRealTime();
       } catch (error) {
-        console.error('Error al cargar datos:', error);
-        mostrarNotificacion('Error al cargar datos');
+        console.error('ERROR AL CARGAR DATOS: ', error);
+        mostrarNotificacion('ERROR AL CARGAR DATOS')
       }
+    }
+
+    function activarListenersRealTime(){
+      //LISTENERS PARA LAS TAXAS
+      const qtasas = query(collection(db, 'tasas'));
+      onSnapshot(qtasas, (snapshot) => {
+        tasas = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        renderizarTsasas();
+        actualizarSuma();
+      });
+
+      //LISTENERS PARA PLANTILLAS
+      const qPlantillas = query(collection(db, 'plantillas'));
+      onSnapshot(qPlantillas, (snapshot) => {
+        plantillasPersonalizadas = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          predeterminada: false
+        }));
+        renderizarTodasLasPlantillas();
+      });
+
+      //LISTENERS PARA PREIODOS
+      const qPeriodos = query(collection(db, 'periodos'));
+      onSnapshot(qPeriodos, (snapshot) => {
+        if (!snapshot.empty) {
+          periodos = snapshot.docs[0].data().periodos || [new Date().getFullYear()];
+          renderizarBotonesPeriodo();
+          actualizarSelectPeriodo();
+        }
+      });
+
+      //LISTENERS PARA TIPOS
+      const qTipos = query(collection(db, 'tipos'));
+      onSnapshot(qTipos, (snapshot) => {
+        if (!snapshot.empty) {
+          tiposPlantilla = snapshot.docs[0].data().tipos || ['reembolso', 'reenvio', 'waiver'];
+          actualizarSelectTipos();
+        }
+      });
     }
 
     // PERÍODOS
     async function cargarPeriodos() {
-      const q = query(collection(db, 'periodos'), where('userId', '==', currentUser.uid));
+      const q = query(collection(db, 'periodos'));
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
@@ -1322,12 +1369,14 @@ soportereembolsos@ContinentalTravel.com.pe`,
         periodos = [anioActual];
         periodoActual = anioActual;
         await addDoc(collection(db, 'periodos'), {
-          userId: currentUser.uid,
-          periodos: periodos
+          periodos: periodos,
+          createdBy: currentUser.email,
+          createdAt: new Date()
         });
       } else {
         periodos = snapshot.docs[0].data().periodos || [new Date().getFullYear()];
         periodoActual = periodos[0];
+        window.periodoDocId = snapshot.docs[0].id; // Guardar el ID del documento
       }
       
       renderizarBotonesPeriodo();
@@ -1351,17 +1400,14 @@ soportereembolsos@ContinentalTravel.com.pe`,
       periodos.push(nuevoPeriodo);
       periodos.sort((a, b) => b - a);
       
-      const q = query(collection(db, 'periodos'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
-      await updateDoc(doc(db, 'periodos', snapshot.docs[0].id), {
-        periodos: periodos
+      await updateDoc(doc(db, 'periodos', window.periodoDocId), {
+        periodos: periodos,
+        lastModifiedBy: currentUser.email,
+        lastModifiedAt: new Date()
       });
       
-      renderizarBotonesPeriodo();
-      actualizarSelectPeriodo();
-      renderizarListaPeriodos();
       input.value = '';
-      mostrarNotificacion('Año agregado correctamente');
+      mostrarNotificacion('Año agregado - visible para todos ✓');
     };
 
     window.eliminarPeriodo = async function(periodo) {
@@ -1383,22 +1429,18 @@ soportereembolsos@ContinentalTravel.com.pe`,
         periodoActual = periodos[0];
       }
       
-      const q = query(collection(db, 'periodos'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
-      await updateDoc(doc(db, 'periodos', snapshot.docs[0].id), {
-        periodos: periodos
+      await updateDoc(doc(db, 'periodos', window.periodoDocId), {
+        periodos: periodos,
+        lastModifiedBy: currentUser.email,
+        lastModifiedAt: new Date()
       });
       
-      renderizarBotonesPeriodo();
-      actualizarSelectPeriodo();
-      renderizarListaPeriodos();
-      renderizarTasas();
-      mostrarNotificacion('Año eliminado');
+      mostrarNotificacion('Año eliminado - cambio visible para todos ✓');
     };
 
     // TASAS
     async function cargarTasas() {
-      const q = query(collection(db, 'tasas'), where('userId', '==', currentUser.uid));
+      const q = query(collection(db, 'tasas'));
       const snapshot = await getDocs(q);
       
       tasas = snapshot.docs.map(doc => ({
@@ -1419,30 +1461,18 @@ soportereembolsos@ContinentalTravel.com.pe`,
         return;
       }
 
-      try {
-        const docRef = await addDoc(collection(db, 'tasas'), {
-          userId: currentUser.uid,
-          nombre: nombre,
-          monto: parseFloat(monto),
-          periodo: periodo,
-          createdAt: new Date()
-        });
+      await addDoc(collection(db, 'tasas'), {
+        nombre: nombre,
+        monto: parseFloat(monto),
+        periodo: periodo,
+        createdBy: currentUser.email,
+        createdAt: new Date()
+      });
 
-        tasas.push({
-          id: docRef.id,
-          nombre: nombre,
-          monto: parseFloat(monto),
-          periodo: periodo
-        });
-
-        renderizarTasas();
-        document.getElementById('nombreTasaInput').value = '';
-        document.getElementById('montoTasaInput').value = '';
-        document.getElementById('nombreTasaInput').focus();
-        mostrarNotificacion('Tasa agregada');
-      } catch (error) {
-        mostrarNotificacion('Error al agregar tasa');
-      }
+      document.getElementById('nombreTasaInput').value = '';
+      document.getElementById('montoTasaInput').value = '';
+      document.getElementById('nombreTasaInput').focus();
+      mostrarNotificacion('Tasa agregada - visible para todos ✓');
     };
 
     window.eliminarTasa = async function(id) {
@@ -1515,29 +1545,21 @@ soportereembolsos@ContinentalTravel.com.pe`,
         return;
       }
       
-      try {
-        await updateDoc(doc(db, 'tasas', id), {
-          nombre: nombre,
-          monto: monto,
-          periodo: periodo
-        });
+      await updateDoc(doc(db, 'tasas', id), {
+        nombre: nombre,
+        monto: monto,
+        periodo: periodo,
+        lastModifiedBy: currentUser.email,
+        lastModifiedAt: new Date()
+      });
 
-        const index = tasas.findIndex(t => t.id === id);
-        if (index !== -1) {
-          tasas[index] = { ...tasas[index], nombre, monto, periodo };
-        }
-
-        renderizarTasas();
-        cerrarModalEditarTasa();
-        mostrarNotificacion('Tasa actualizada');
-      } catch (error) {
-        mostrarNotificacion('Error al actualizar tasa');
-      }
+      cerrarModalEditarTasa();
+      mostrarNotificacion('Tasa actualizada - cambio visible para todos ✓');
     };
 
     // PLANTILLAS
     async function cargarPlantillas() {
-      const q = query(collection(db, 'plantillas'), where('userId', '==', currentUser.uid));
+      const q = query(collection(db, 'plantillas'));
       const snapshot = await getDocs(q);
       
       plantillasPersonalizadas = snapshot.docs.map(doc => ({
@@ -1553,51 +1575,46 @@ soportereembolsos@ContinentalTravel.com.pe`,
       const nombre = document.getElementById('nombrePlantillaInput').value.trim();
       const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
       const tipo = document.getElementById('tipoPlantillaSelect').value;
-    
+
       if (!nombre || !contenido) {
         mostrarNotificacion('Por favor completa todos los campos');
         return;
       }
-    
-      const docRef = await addDoc(collection(db, 'plantillas'), {
-        userId: currentUser.uid,
+
+      await addDoc(collection(db, 'plantillas'), {
         nombre: nombre,
         tipo: tipo,
         contenido: contenido,
+        createdBy: currentUser.email,
         createdAt: new Date()
       });
-    
-      plantillasPersonalizadas.push({
-        id: docRef.id,
-        nombre: nombre,
-        tipo: tipo,
-        contenido: contenido,
-        predeterminada: false
-      });
-    
-      renderizarTodasLasPlantillas();
+
       document.getElementById('nombrePlantillaInput').value = '';
       document.getElementById('contenidoPlantillaInput').value = '';
-      mostrarNotificacion('Plantilla agregada correctamente ✓');
+      mostrarNotificacion('Plantilla agregada - visible para todos ✓');
       cambiarTab('plantillas');
     };
 
     window.eliminarPlantillaPersonalizada = async function(id) {
-      if (!confirm('¿Eliminar esta plantilla?')) return;
-      
-      try {
-        await deleteDoc(doc(db, 'plantillas', id));
-        plantillasPersonalizadas = plantillasPersonalizadas.filter(p => p.id !== id);
-        renderizarTodasLasPlantillas();
-        mostrarNotificacion('Plantilla eliminada');
-      } catch (error) {
-        mostrarNotificacion('Error al eliminar plantilla');
+      if (tiposPlantilla.length <= 1) {
+        mostrarNotificacion('Debe haber al menos un tipo');
+        return;
       }
+      
+      tiposPlantilla = tiposPlantilla.filter(t => t !== tipo);
+      
+      await updateDoc(doc(db, 'tipos', window.tiposDocId), {
+        tipos: tiposPlantilla,
+        lastModifiedBy: currentUser.email,
+        lastModifiedAt: new Date()
+      });
+      
+      mostrarNotificacion('Tipo eliminado - cambio visible para todos ✓');
     };
 
     window.guardarEdicionPlantilla = async function() {
       if (!plantillaEnEdicion) return;
-      
+  
       const nombre = document.getElementById('editNombrePlantilla').value.trim();
       const tipo = document.getElementById('editTipoPlantilla').value;
       const contenido = document.getElementById('editContenidoPlantilla').value.trim();
@@ -1607,45 +1624,43 @@ soportereembolsos@ContinentalTravel.com.pe`,
         return;
       }
       
-      try {
-        await updateDoc(doc(db, 'plantillas', plantillaEnEdicion.id), {
-          nombre: nombre,
-          tipo: tipo,
-          contenido: contenido
-        });
+      await updateDoc(doc(db, 'plantillas', plantillaEnEdicion.id), {
+        nombre: nombre,
+        tipo: tipo,
+        contenido: contenido,
+        lastModifiedBy: currentUser.email,
+        lastModifiedAt: new Date()
+      });
 
-        const index = plantillasPersonalizadas.findIndex(p => p.id === plantillaEnEdicion.id);
-        if (index !== -1) {
-          plantillasPersonalizadas[index] = {
-            ...plantillasPersonalizadas[index],
-            nombre, tipo, contenido
-          };
-        }
-
-        renderizarTodasLasPlantillas();
-        cerrarModalEditar();
-        mostrarNotificacion('Plantilla actualizada');
-      } catch (error) {
-        mostrarNotificacion('Error al actualizar plantilla');
-      }
+      cerrarModalEditar();
+      mostrarNotificacion('Plantilla actualizada - cambio visible para todos ✓');
     };
 
     // TIPOS
     async function cargarTipos() {
-      const q = query(collection(db, 'tipos'), where('userId', '==', currentUser.uid));
-      const snapshot = await getDocs(q);
+      const input = document.getElementById('nuevoTipoInput');
+      const nuevoTipo = input.value.trim().toLowerCase();
       
-      if (snapshot.empty) {
-        tiposPlantilla = ['reembolso', 'reenvio', 'waiver'];
-        await addDoc(collection(db, 'tipos'), {
-          userId: currentUser.uid,
-          tipos: tiposPlantilla
-        });
-      } else {
-        tiposPlantilla = snapshot.docs[0].data().tipos || ['reembolso', 'reenvio', 'waiver'];
+      if (!nuevoTipo) {
+        mostrarNotificacion('Por favor ingresa un nombre');
+        return;
       }
       
-      actualizarSelectTipos();
+      if (tiposPlantilla.includes(nuevoTipo)) {
+        mostrarNotificacion('Este tipo ya existe');
+        return;
+      }
+      
+      tiposPlantilla.push(nuevoTipo);
+      
+      await updateDoc(doc(db, 'tipos', window.tiposDocId), {
+        tipos: tiposPlantilla,
+        lastModifiedBy: currentUser.email,
+        lastModifiedAt: new Date()
+      });
+      
+      input.value = '';
+      mostrarNotificacion('Tipo agregado - visible para todos ✓');
     }
 
     window.agregarTipo = async function() {
@@ -2019,5 +2034,3 @@ soportereembolsos@ContinentalTravel.com.pe`,
   </script>
 </body>
 </html>
-
-
