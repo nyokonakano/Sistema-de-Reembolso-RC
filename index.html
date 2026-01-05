@@ -79,6 +79,26 @@
             </div>
           </div>
 
+          <!-- Barra de búsqueda y filtros para plantillas -->
+          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin-bottom: 12px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+              <input 
+                type="text" 
+                id="searchPlantillas" 
+                class="control-input" 
+                placeholder="🔍 Buscar plantillas por nombre o contenido..."
+                style="flex: 1; min-width: 200px;"
+                oninput="filtrarPlantillas()"
+              >
+              <select id="filtroTipoPlantilla" class="form-input" style="min-width: 150px;" onchange="filtrarPlantillas()">
+                <option value="">Todos los tipos</option>
+              </select>
+              <button class="generate-btn" onclick="limpiarFiltrosPlantillas()" style="background: #718096;">
+                🧹 Limpiar
+              </button>
+            </div>
+          </div>
+
           <div class="template-dropdown">
             <div class="dropdown-header" onclick="toggleDropdown()">
               <div class="dropdown-title">Todas las Plantillas</div>
@@ -107,6 +127,18 @@
             </div>
           </div>
 
+          <!--BARRA DE BUSQUEDA DE TASAS-->
+          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+            <input 
+              type="text" 
+              id="searchTasas" 
+              class="control-input" 
+              placeholder="🔍 Buscar tasas por nombre..."
+              oninput="filtrarTasas()"
+            >
+          </div>
+
+          <!-- Formulario para agregar tasas -->
           <div class="add-tasa-form">
             <div class="form-row">
               <input 
