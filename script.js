@@ -30,6 +30,12 @@ let tiposPlantilla = [];
 let plantillaEnEdicion = null;
 let periodos = [2024];
 let periodoActual = 2024;
+//VARIABLES PARA FILTROS
+let filtrosBusqueda = {
+    plantillas: '',
+    tipoPlantilla: '',
+    tasas: ''
+};
 
 const plantillasPredeterminadas = [
     {
@@ -403,12 +409,18 @@ window.guardarEdicionTasa = async function(id) {
 // PLANTILLAS
 async function cargarPlantillas() {
     const snapshot = await getDocs(collection(db, 'plantillas'));
-
     plantillasPersonalizadas = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    predeterminada: false
+        id: doc.id,
+        ...doc.data(),
+        predeterminada: false
     }));
+    
+    // Ordenar por el campo 'orden' si existe
+    plantillasPersonalizadas.sort((a, b) => {
+        const ordenA = a.orden !== undefined ? a.orden : 999;
+        const ordenB = b.orden !== undefined ? b.orden : 999;
+        return ordenA - ordenB;
+    });
     
     renderizarTodasLasPlantillas();
 }
@@ -543,6 +555,26 @@ window.eliminarTipo = async function(tipo) {
     mostrarNotificacion('Tipo eliminado - cambio visible para todos ✓');
 };
 
+// FUNCIONES DE FILTRADO
+window.filtrarPlantillas = function() {
+    filtrosBusqueda.plantillas = document.getElementById('searchPlantillas').value.toLowerCase();
+    filtrosBusqueda.tipoPlantilla = document.getElementById('filtroTipoPlantilla').value;
+    renderizarTodasLasPlantillas();
+};
+
+window.limpiarFiltrosPlantillas = function() {
+    document.getElementById('searchPlantillas').value = '';
+    document.getElementById('filtroTipoPlantilla').value = '';
+    filtrosBusqueda.plantillas = '';
+    filtrosBusqueda.tipoPlantilla = '';
+    renderizarTodasLasPlantillas();
+};
+
+window.filtrarTasas = function() {
+    filtrosBusqueda.tasas = document.getElementById('searchTasas').value.toLowerCase();
+    renderizarTasas();
+};
+
 // UI FUNCTIONS
 window.cambiarTab = function(tabName) {
     document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -591,13 +623,19 @@ function actualizarSelectPeriodo() {
 function actualizarSelectTipos() {
     const select = document.getElementById('tipoPlantillaSelect');
     const editSelect = document.getElementById('editTipoPlantilla');
+    const filtroSelect = document.getElementById('filtroTipoPlantilla');
     
     const options = tiposPlantilla.map(tipo => 
-    `<option value="${tipo}">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</option>`
+        `<option value="${tipo}">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</option>`
     ).join('');
     
     select.innerHTML = options;
     editSelect.innerHTML = options;
+    
+    // Actualizar filtro con opción "Todos"
+    if (filtroSelect) {
+        filtroSelect.innerHTML = '<option value="">Todos los tipos</option>' + options;
+    }
 }
 
 window.toggleSeleccionTasa = function(id) {
@@ -644,36 +682,44 @@ window.usarTasa = function(tasa) {
 
 function renderizarTasas() {
     const lista = document.getElementById('tasasList');
-    const tasasDelPeriodo = tasas.filter(t => t.periodo === periodoActual);
+    let tasasDelPeriodo = tasas.filter(t => t.periodo === periodoActual);
+    
+    // APLICAR FILTRO DE BÚSQUEDA
+    if (filtrosBusqueda.tasas) {
+        tasasDelPeriodo = tasasDelPeriodo.filter(t => 
+            t.nombre.toLowerCase().includes(filtrosBusqueda.tasas)
+        );
+    }
     
     if (tasasDelPeriodo.length === 0) {
-    lista.innerHTML = `
-        <div class="empty-state">
-        <p>No hay tasas para ${periodoActual}</p>
-        <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para este año</p>
-        </div>
-    `;
-    return;
+        const mensajeBusqueda = filtrosBusqueda.tasas 
+            ? 'No se encontraron tasas con ese nombre' 
+            : `No hay tasas para ${periodoActual}`;
+        
+        lista.innerHTML = `
+            <div class="empty-state">
+                <p>${mensajeBusqueda}</p>
+                <p style="font-size: 0.85rem; margin-top: 8px;">
+                    ${filtrosBusqueda.tasas ? 'Intenta con otros términos' : 'Agrega tasas para este año'}
+                </p>
+            </div>
+        `;
+        return;
     }
 
     lista.innerHTML = tasasDelPeriodo.map(tasa => `
-    <div class="tasa-item">
-        <input 
-        type="checkbox" 
-        class="tasa-checkbox" 
-        ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''}
-        onchange="toggleSeleccionTasa('${tasa.id}')"
-        >
-        <div class="tasa-info">
-        <div class="tasa-nombre">${tasa.nombre}</div>
-        <div class="tasa-monto">${tasa.monto.toFixed(2)}</div>
+        <div class="tasa-item">
+            <input type="checkbox" class="tasa-checkbox" ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''} onchange="toggleSeleccionTasa('${tasa.id}')">
+            <div class="tasa-info">
+                <div class="tasa-nombre">${tasa.nombre}</div>
+                <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
+            </div>
+            <div class="tasa-actions">
+                <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">📄</button>
+                <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
+                <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')" title="Eliminar">🗑️</button>
+            </div>
         </div>
-        <div class="tasa-actions">
-        <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">📄</button>
-        <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
-        <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')" title="Eliminar">🗑️</button>
-        </div>
-    </div>
     `).join('');
 }
 
@@ -720,43 +766,66 @@ function renderizarTodasLasPlantillas() {
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
 
-    const todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
+    let todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
+
+    // APLICAR FILTROS
+    if (filtrosBusqueda.plantillas) {
+        todasLasPlantillas = todasLasPlantillas.filter(p => 
+            p.nombre.toLowerCase().includes(filtrosBusqueda.plantillas) ||
+            p.contenido.toLowerCase().includes(filtrosBusqueda.plantillas)
+        );
+    }
+
+    if (filtrosBusqueda.tipoPlantilla) {
+        todasLasPlantillas = todasLasPlantillas.filter(p => 
+            p.tipo === filtrosBusqueda.tipoPlantilla
+        );
+    }
 
     if (todasLasPlantillas.length === 0) {
-    grid.innerHTML = `
-        <div class="empty-state">
-        <p>No hay plantillas disponibles</p>
-        </div>
-    `;
-    return;
+        grid.innerHTML = `
+            <div class="empty-state">
+                <p>No se encontraron plantillas</p>
+                <p style="font-size: 0.85rem; margin-top: 8px;">Intenta con otros términos de búsqueda</p>
+            </div>
+        `;
+        return;
     }
 
     grid.innerHTML = todasLasPlantillas.map(plantilla => {
-    const contenidoPreview = plantilla.contenido
-        .replace(/{RUTA}/g, ruta)
-        .replace(/{CE2}/g, ce2);
-    
-    const tipoClass = plantilla.tipo || 'reembolso';
-    const puedeEditar = !plantilla.predeterminada;
-    
-    return `
-        <div class="template-card">
-        <div class="template-header">
-            <div class="template-title-wrapper">
-            <div class="template-title">${plantilla.nombre}</div>
-            <span class="template-type ${tipoClass}">${(plantilla.tipo || 'reembolso').charAt(0).toUpperCase() + (plantilla.tipo || 'reembolso').slice(1)}</span>
+        const contenidoPreview = plantilla.contenido
+            .replace(/{RUTA}/g, ruta)
+            .replace(/{CE2}/g, ce2);
+        
+        const tipoClass = plantilla.tipo || 'reembolso';
+        const puedeEditar = !plantilla.predeterminada;
+        
+        return `
+            <div class="template-card"
+            draggable="${puedeEditar ? 'true' : 'false'}"
+            ondragstart="${puedeEditar ? `handleDragStart(event, ${JSON.stringify(plantilla).replace(/'/g, '&apos;')})` : ''}"
+            ondragover="${puedeEditar ? 'handleDragOver(event)' : ''}"
+            ondragenter="${puedeEditar ? 'handleDragEnter(event)' : ''}"
+            ondragleave="${puedeEditar ? 'handleDragLeave(event)' : ''}"
+            ondrop="${puedeEditar ? `handleDrop(event, ${JSON.stringify(plantilla).replace(/'/g, '&apos;')})` : ''}"
+            ondragend="${puedeEditar ? 'handleDragEnd(event)' : ''}">
+                <div class="template-header">
+                    ${puedeEditar ? '<span class="drag-handle" title="Arrastra para reordenar">⋮⋮</span>' : ''}
+                    <div class="template-title-wrapper">
+                        <div class="template-title">${plantilla.nombre}</div>
+                        <span class="template-type ${tipoClass}">${(plantilla.tipo || 'reembolso').charAt(0).toUpperCase() + (plantilla.tipo || 'reembolso').slice(1)}</span>
+                    </div>
+                    ${puedeEditar ? `
+                        <div class="template-actions">
+                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>✏️</button>
+                        <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="template-content">${contenidoPreview}</div>
+                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
             </div>
-            ${puedeEditar ? `
-            <div class="template-actions">
-                <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>✏️</button>
-                <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
-            </div>
-            ` : ''}
-        </div>
-        <div class="template-content">${contenidoPreview}</div>
-        <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
-        </div>
-    `;
+        `;
     }).join('');
 }
 
@@ -864,3 +933,121 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     });
 });
+
+// DRAG & DROP PARA PLANTILLAS
+let draggedElement = null;
+let draggedPlantilla = null;
+
+window.handleDragStart = function(e, plantilla) {
+    draggedElement = e.target.closest('.template-card');
+    draggedPlantilla = plantilla;
+    draggedElement.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', draggedElement.innerHTML);
+};
+
+window.handleDragOver = function(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    
+    const afterElement = getDragAfterElement(e.currentTarget.parentElement, e.clientY);
+    const draggable = document.querySelector('.dragging');
+    
+    if (afterElement == null) {
+        e.currentTarget.parentElement.appendChild(draggable);
+    } else {
+        e.currentTarget.parentElement.insertBefore(draggable, afterElement);
+    }
+    
+    return false;
+};
+
+window.handleDragEnter = function(e) {
+    const card = e.target.closest('.template-card');
+    if (card && card !== draggedElement) {
+        card.classList.add('drag-over');
+    }
+};
+
+window.handleDragLeave = function(e) {
+    const card = e.target.closest('.template-card');
+    if (card) {
+        card.classList.remove('drag-over');
+    }
+};
+
+window.handleDrop = async function(e, plantilla) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    e.target.closest('.template-card').classList.remove('drag-over');
+    
+    if (draggedPlantilla && draggedPlantilla.id !== plantilla.id) {
+        // Reordenar el array de plantillas
+        const draggedIndex = plantillasPersonalizadas.findIndex(p => p.id === draggedPlantilla.id);
+        const targetIndex = plantillasPersonalizadas.findIndex(p => p.id === plantilla.id);
+        
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+            // Remover del índice original
+            const [removed] = plantillasPersonalizadas.splice(draggedIndex, 1);
+            // Insertar en nuevo índice
+            plantillasPersonalizadas.splice(targetIndex, 0, removed);
+            
+            // Guardar nuevo orden en Firebase
+            await guardarOrdenPlantillas();
+            
+            mostrarNotificacion('Orden actualizado ✓');
+        }
+    }
+    
+    return false;
+};
+
+window.handleDragEnd = function(e) {
+    const cards = document.querySelectorAll('.template-card');
+    cards.forEach(card => {
+        card.classList.remove('dragging', 'drag-over');
+    });
+    draggedElement = null;
+    draggedPlantilla = null;
+};
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.template-card:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+async function guardarOrdenPlantillas() {
+    try {
+        // Actualizar el orden de cada plantilla en Firebase
+        const batch = [];
+        plantillasPersonalizadas.forEach((plantilla, index) => {
+            if (!plantilla.predeterminada) {
+                batch.push(
+                    updateDoc(doc(db, 'plantillas', plantilla.id), {
+                        orden: index,
+                        lastModifiedBy: currentUser.email,
+                        lastModifiedAt: new Date()
+                    })
+                );
+            }
+        });
+        
+        await Promise.all(batch);
+    } catch (error) {
+        console.error('Error al guardar orden:', error);
+    }
+}
