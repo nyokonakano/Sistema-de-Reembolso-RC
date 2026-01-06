@@ -557,16 +557,51 @@ window.eliminarTipo = async function(tipo) {
 
 // FUNCIONES DE FILTRADO
 window.filtrarPlantillas = function() {
-    filtrosBusqueda.plantillas = document.getElementById('searchPlantillas').value.toLowerCase();
-    filtrosBusqueda.tipoPlantilla = document.getElementById('filtroTipoPlantilla').value;
+    console.log('[+] Filtrando plantillas...'); // DEBUG
+    
+    const searchInput = document.getElementById('searchPlantillas');
+    const filtroTipo = document.getElementById('filtroTipoPlantilla');
+    const campoRI = document.getElementById('campoNumeroRIConfig');
+    
+    console.log('Campo RI encontrado:', campoRI); // DEBUG
+    console.log('Filtro tipo valor:', filtroTipo.value); // DEBUG
+    
+    filtrosBusqueda.plantillas = searchInput.value.toLowerCase();
+    filtrosBusqueda.tipoPlantilla = filtroTipo.value;
+    
+    // Mostrar/ocultar campo de Número RI
+    if (filtroTipo.value === 'reenvío') {
+        console.log('[+] Mostrando campo RI'); // DEBUG
+        campoRI.style.display = 'block';
+        campoRI.style.animation = 'slideDown 0.3s ease';
+    } else {
+        console.log('[!] Ocultando campo RI'); // DEBUG
+        campoRI.style.display = 'none';
+    }
+    
     renderizarTodasLasPlantillas();
 };
 
 window.limpiarFiltrosPlantillas = function() {
+    console.log('[+] Limpiando filtros...'); // DEBUG
+    
     document.getElementById('searchPlantillas').value = '';
     document.getElementById('filtroTipoPlantilla').value = '';
+    
+    const numeroRIInput = document.getElementById('numeroRIGlobal');
+    if (numeroRIInput) {
+        numeroRIInput.value = '';
+    }
+    
     filtrosBusqueda.plantillas = '';
     filtrosBusqueda.tipoPlantilla = '';
+    
+    // Ocultar campo de Número RI
+    const campoRI = document.getElementById('campoNumeroRIConfig');
+    if (campoRI) {
+        campoRI.style.display = 'none';
+    }
+    
     renderizarTodasLasPlantillas();
 };
 
@@ -765,6 +800,8 @@ function renderizarTodasLasPlantillas() {
     const grid = document.getElementById('templatesGrid');
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
+    const numeroRIElement = document.getElementById('numeroRIGlobal');
+    const numeroRI = numeroRIElement ? numeroRIElement.value.trim() || 'RI-XXXXX' : 'RI-XXXXX';
 
     let todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
 
@@ -795,35 +832,38 @@ function renderizarTodasLasPlantillas() {
     grid.innerHTML = todasLasPlantillas.map(plantilla => {
         const contenidoPreview = plantilla.contenido
             .replace(/{RUTA}/g, ruta)
-            .replace(/{CE2}/g, ce2);
+            .replace(/{CE2}/g, ce2)
+            .replace(/{NUMERO_RI}/g, numeroRI)
+            .replace(/{NUMERO RI}/g, numeroRI);
         
         const tipoClass = plantilla.tipo || 'reembolso';
         const puedeEditar = !plantilla.predeterminada;
-        
+
         return `
-            <div class="template-card"
-            draggable="${puedeEditar ? 'true' : 'false'}"
-            ondragstart="${puedeEditar ? `handleDragStart(event, ${JSON.stringify(plantilla).replace(/'/g, '&apos;')})` : ''}"
-            ondragover="${puedeEditar ? 'handleDragOver(event)' : ''}"
-            ondragenter="${puedeEditar ? 'handleDragEnter(event)' : ''}"
-            ondragleave="${puedeEditar ? 'handleDragLeave(event)' : ''}"
-            ondrop="${puedeEditar ? `handleDrop(event, ${JSON.stringify(plantilla).replace(/'/g, '&apos;')})` : ''}"
-            ondragend="${puedeEditar ? 'handleDragEnd(event)' : ''}">
+            <div class="template-card" 
+                 ${puedeEditar ? `
+                   draggable="true"
+                   ondragstart="handleDragStart(event, ${JSON.stringify(plantilla).replace(/'/g, '&#39;')})"
+                   ondragover="event.preventDefault(); handleDragOver(event)"
+                   ondragenter="handleDragEnter(event)"
+                   ondragleave="handleDragLeave(event)"
+                   ondrop="event.preventDefault(); handleDrop(event, ${JSON.stringify(plantilla).replace(/'/g, '&#39;')})"
+                   ondragend="handleDragEnd(event)"
+                 ` : ''}>
                 <div class="template-header">
-                    ${puedeEditar ? '<span class="drag-handle" title="Arrastra para reordenar">⋮⋮</span>' : ''}
                     <div class="template-title-wrapper">
                         <div class="template-title">${plantilla.nombre}</div>
                         <span class="template-type ${tipoClass}">${(plantilla.tipo || 'reembolso').charAt(0).toUpperCase() + (plantilla.tipo || 'reembolso').slice(1)}</span>
                     </div>
                     ${puedeEditar ? `
                         <div class="template-actions">
-                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>✏️</button>
-                        <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
+                            <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&#39;")})'>✏️</button>
+                            <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
                         </div>
                     ` : ''}
                 </div>
                 <div class="template-content">${contenidoPreview}</div>
-                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
+                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/'/g, "&#39;")})'>Copiar Plantilla</button>
             </div>
         `;
     }).join('');

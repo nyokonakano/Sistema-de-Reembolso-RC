@@ -76,6 +76,20 @@
                   </button>
                 </div>
               </div>
+
+              <!-- NUEVO: Campo dinámico para Número RI -->
+              <div class="control-group" id="campoNumeroRIConfig" style="display: none;">
+                <label class="control-label">
+                  Número RI 
+                </label>
+                <input 
+                  type="text" 
+                  id="numeroRIGlobal" 
+                  class="control-input" 
+                  placeholder="1900..."
+                  oninput="renderizarTodasLasPlantillas()"
+                >
+              </div>
             </div>
           </div>
 
