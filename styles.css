@@ -921,3 +921,18 @@ select.form-input {
 .drag-handle:active {
     cursor: grabbing; /* Cambia a "mano cerrada" mientras se está arrastrando */
 }
+
+#campoNumeroRIConfig {
+    transition: all 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 100px;
+    }
+}
