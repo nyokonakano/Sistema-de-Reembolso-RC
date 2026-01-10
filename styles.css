@@ -884,40 +884,43 @@ select.form-input {
 }
 
 /* Estilos para Drag & Drop */
-/* Estilos base para las tarjetas de plantillas que se pueden arrastrar */
-.template-card {
-    cursor: move; /* Cambia el cursor a una mano para indicar que es movible */
-    transition: all 0.2s ease; /* Anima suavemente todos los cambios de propiedades en 0.2s */
+/* Estilos para Drag & Drop */
+.template-card[draggable="true"] {
+    cursor: move;
+    transition: all 0.2s ease;
 }
 
-/* Estilos cuando la tarjeta se está arrastrando activamente */
 .template-card.dragging {
-    opacity: 0.5; /* Reduce la opacidad al 50% para indicar que está siendo arrastrada */
-    transform: scale(0.95); /* Reduce el tamaño al 95% para efecto visual de levantamiento */
-    border: 2px dashed #3182ce; /* Añade un borde punteado azul para destacar la tarjeta en movimiento */
+    opacity: 0.4;
+    transform: scale(0.98);
+    border: 2px dashed #3182ce;
+    background: #f7fafc;
 }
 
-/* Estilos cuando se arrastra una tarjeta sobre otra área válida */
 .template-card.drag-over {
-    border: 2px solid #3182ce; /* Cambia a borde sólido azul para indicar zona de destino */
-    background: #edf2f7; /* Cambia el fondo a gris claro para resaltar la zona de drop */
+    border: 2px solid #3182ce;
+    background: #ebf8ff;
+    transform: scale(1.02);
 }
 
-/* Contenedor grid que actúa como zona de drop */
 .templates-grid {
-    position: relative; /* Posicionamiento relativo para referencias de coordenadas en drag & drop */
+    position: relative;
 }
 
-/* Estilos para el asa de arrastre dentro de la tarjeta */
 .drag-handle {
-    cursor: grab; /* Cursor de "mano abierta" para indicar que se puede agarrar */
-    padding: 4px 8px; /* Espaciado interno para hacer el área clickeable más grande */
-    color: #718096; /* Color gris para el ícono del drag handle */
-    font-size: 1.2rem; /* Tamaño aumentado para mejor visibilidad */
-    user-select: none; /* Previene la selección de texto al arrastrar */
+    cursor: grab;
+    padding: 4px 8px;
+    color: #718096;
+    font-size: 1.2rem;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
 }
 
-/* Estilos cuando el usuario presiona activamente el drag handle */
 .drag-handle:active {
-    cursor: grabbing; /* Cambia a "mano cerrada" mientras se está arrastrando */
+    cursor: grabbing;
+}
+
+.template-card[draggable="true"]:hover .drag-handle {
+    color: #3182ce;
 }

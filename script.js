@@ -806,13 +806,15 @@ function renderizarTodasLasPlantillas() {
         
         return `
             <div class="template-card"
-            draggable="${puedeEditar ? 'true' : 'false'}"
-            ondragstart="${puedeEditar ? `handleDragStart(event, ${JSON.stringify(plantilla).replace(/'/g, '&apos;')})` : ''}"
-            ondragover="${puedeEditar ? 'handleDragOver(event)' : ''}"
-            ondragenter="${puedeEditar ? 'handleDragEnter(event)' : ''}"
-            ondragleave="${puedeEditar ? 'handleDragLeave(event)' : ''}"
-            ondrop="${puedeEditar ? `handleDrop(event, ${JSON.stringify(plantilla).replace(/'/g, '&apos;')})` : ''}"
-            ondragend="${puedeEditar ? 'handleDragEnd(event)' : ''}">
+                ${puedeEditar ? `
+                draggable="true"
+                ondragstart="handleDragStart(event, ${JSON.stringify(plantilla).replace(/"/g, '&quot;').replace(/'/g, '&apos;')})"
+                ondragover="handleDragOver(event)"
+                ondragenter="handleDragEnter(event)"
+                ondragleave="handleDragLeave(event)"
+                ondrop="handleDrop(event, ${JSON.stringify(plantilla).replace(/"/g, '&quot;').replace(/'/g, '&apos;')})"
+                ondragend="handleDragEnd(event)"
+                ` : ''}>
                 <div class="template-header">
                     ${puedeEditar ? '<span class="drag-handle" title="Arrastra para reordenar">⋮⋮</span>' : ''}
                     <div class="template-title-wrapper">
@@ -821,13 +823,13 @@ function renderizarTodasLasPlantillas() {
                     </div>
                     ${puedeEditar ? `
                         <div class="template-actions">
-                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>✏️</button>
+                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})'>✏️</button>
                         <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
                         </div>
                     ` : ''}
                 </div>
                 <div class="template-content">${contenidoPreview}</div>
-                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
+                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
             </div>
         `;
     }).join('');
@@ -948,7 +950,6 @@ window.handleDragStart = function(e, plantilla) {
     draggedPlantilla = plantilla;
     draggedElement.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', draggedElement.innerHTML);
 };
 
 window.handleDragOver = function(e) {
@@ -956,91 +957,92 @@ window.handleDragOver = function(e) {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
-    
-    const afterElement = getDragAfterElement(e.currentTarget.parentElement, e.clientY);
-    const draggable = document.querySelector('.dragging');
-    
-    if (afterElement == null) {
-        e.currentTarget.parentElement.appendChild(draggable);
-    } else {
-        e.currentTarget.parentElement.insertBefore(draggable, afterElement);
-    }
-    
     return false;
 };
 
 window.handleDragEnter = function(e) {
     const card = e.target.closest('.template-card');
-    if (card && card !== draggedElement) {
+    if (card && card !== draggedElement && !card.classList.contains('dragging')) {
         card.classList.add('drag-over');
     }
 };
 
 window.handleDragLeave = function(e) {
     const card = e.target.closest('.template-card');
-    if (card) {
+    if (card && !card.contains(e.relatedTarget)) {
         card.classList.remove('drag-over');
     }
 };
 
-window.handleDrop = async function(e, plantilla) {
+window.handleDrop = async function(e, targetPlantilla) {
     if (e.stopPropagation) {
         e.stopPropagation();
     }
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
     
-    e.target.closest('.template-card').classList.remove('drag-over');
+    // Limpiar estilos
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('drag-over');
+    });
     
-    if (draggedPlantilla && draggedPlantilla.id !== plantilla.id) {
-        // Reordenar el array de plantillas
-        const draggedIndex = plantillasPersonalizadas.findIndex(p => p.id === draggedPlantilla.id);
-        const targetIndex = plantillasPersonalizadas.findIndex(p => p.id === plantilla.id);
+    if (!draggedPlantilla || !targetPlantilla) {
+        return false;
+    }
+    
+    if (draggedPlantilla.id === targetPlantilla.id) {
+        return false;
+    }
+    
+    // Solo permitir reordenar plantillas personalizadas
+    if (draggedPlantilla.predeterminada || targetPlantilla.predeterminada) {
+        mostrarNotificacion('Solo puedes reordenar plantillas personalizadas');
+        return false;
+    }
+    
+    // Encontrar índices en el array de plantillas personalizadas
+    const draggedIndex = plantillasPersonalizadas.findIndex(p => p.id === draggedPlantilla.id);
+    const targetIndex = plantillasPersonalizadas.findIndex(p => p.id === targetPlantilla.id);
+    
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+        // Crear copia del array
+        const newOrder = [...plantillasPersonalizadas];
         
-        if (draggedIndex !== -1 && targetIndex !== -1) {
-            // Remover del índice original
-            const [removed] = plantillasPersonalizadas.splice(draggedIndex, 1);
-            // Insertar en nuevo índice
-            plantillasPersonalizadas.splice(targetIndex, 0, removed);
-            
-            // Guardar nuevo orden en Firebase
-            await guardarOrdenPlantillas();
-            
-            mostrarNotificacion('Orden actualizado ✓');
-        }
+        // Remover elemento arrastrado
+        const [removed] = newOrder.splice(draggedIndex, 1);
+        
+        // Insertar en nueva posición
+        newOrder.splice(targetIndex, 0, removed);
+        
+        // Actualizar array local
+        plantillasPersonalizadas = newOrder;
+        
+        // Guardar orden en Firebase
+        await guardarOrdenPlantillas();
+        
+        // Re-renderizar
+        renderizarTodasLasPlantillas();
+        
+        mostrarNotificacion('Orden actualizado ✓');
     }
     
     return false;
 };
 
 window.handleDragEnd = function(e) {
-    const cards = document.querySelectorAll('.template-card');
-    cards.forEach(card => {
+    document.querySelectorAll('.template-card').forEach(card => {
         card.classList.remove('dragging', 'drag-over');
     });
     draggedElement = null;
     draggedPlantilla = null;
 };
 
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.template-card:not(.dragging)')];
-    
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
 async function guardarOrdenPlantillas() {
     try {
-        // Actualizar el orden de cada plantilla en Firebase
         const batch = [];
         plantillasPersonalizadas.forEach((plantilla, index) => {
-            if (!plantilla.predeterminada) {
+            if (!plantilla.predeterminada && plantilla.id) {
                 batch.push(
                     updateDoc(doc(db, 'plantillas', plantilla.id), {
                         orden: index,
@@ -1054,5 +1056,6 @@ async function guardarOrdenPlantillas() {
         await Promise.all(batch);
     } catch (error) {
         console.error('Error al guardar orden:', error);
+        mostrarNotificacion('Error al guardar el orden');
     }
 }
