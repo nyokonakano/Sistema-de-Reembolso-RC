@@ -884,7 +884,6 @@ select.form-input {
 }
 
 /* Estilos para Drag & Drop */
-/* Estilos para Drag & Drop */
 .template-card[draggable="true"] {
     cursor: move;
     transition: all 0.2s ease;
