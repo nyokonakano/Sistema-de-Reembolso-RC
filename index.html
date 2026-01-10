@@ -77,6 +77,17 @@
                 </div>
               </div>
 
+              <div class="control-group">
+                <label for="" class="control-label">Fecha</label>
+                <input
+                  type="text"
+                  id="fechaInput"
+                  class="control-input"
+                  placeholder="03-MAR-25"
+                  oninput="renderizarTodasLasPlantillas()"
+                  >
+              </div>
+
               <!-- NUEVO: Campo dinámico para Número RI -->
               <!--<div class="control-group" id="campoNumeroRIConfig" style="display: none;">
                 <label class="control-label">
@@ -223,7 +234,7 @@
             </div>
             <div class="form-row" style="grid-template-columns: 1fr;">
               <div class="control-group">
-                <label class="control-label">Contenido (usa {RUTA} y {CE2} como variables)</label>
+                <label class="control-label">Contenido (usa {RUTA}, {CE2} y {FECHA} como variables)</label>
                 <textarea 
                   id="contenidoPlantillaInput" 
                   class="form-input" 

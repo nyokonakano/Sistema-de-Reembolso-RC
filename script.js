@@ -751,10 +751,12 @@ window.toggleDropdown = function() {
 window.copiarPlantilla = function(plantilla) {
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
+    const fecha = document.getElementById('fechaInput').value.trim() ||'';
     
     let textoFinal = plantilla.contenido
     .replace(/{RUTA}/g, ruta)
-    .replace(/{CE2}/g, ce2);
+    .replace(/{CE2}/g, ce2)
+    .replace(/{FECHA}/g, fecha);
     
     copiarTexto(textoFinal);
     mostrarNotificacion('Plantilla copiada');
@@ -765,6 +767,7 @@ function renderizarTodasLasPlantillas() {
     const grid = document.getElementById('templatesGrid');
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
+    const fecha = document.getElementById('fechaInput').value.trim() ||'';
 
     let todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
 
@@ -795,7 +798,8 @@ function renderizarTodasLasPlantillas() {
     grid.innerHTML = todasLasPlantillas.map(plantilla => {
         const contenidoPreview = plantilla.contenido
             .replace(/{RUTA}/g, ruta)
-            .replace(/{CE2}/g, ce2);
+            .replace(/{CE2}/g, ce2)
+            .replace(/{FECHA}/g, fecha);
         
         const tipoClass = plantilla.tipo || 'reembolso';
         const puedeEditar = !plantilla.predeterminada;
@@ -920,6 +924,7 @@ function mostrarNotificacion(mensaje) {
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
+    document.getElementById('fechaInput').addEventListener('input', renderizarTodasLasPlantillas);
     
     document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
