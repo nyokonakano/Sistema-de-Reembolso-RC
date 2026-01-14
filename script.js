@@ -461,31 +461,33 @@ window.eliminarPlantillaPersonalizada = async function(id) {
 };
 
 window.guardarEdicionPlantilla = async function() {
-    if (!plantillaEnEdicion) return;
+    const nombre = document.getElementById('nombrePlantillaInput').value.trim();
+    const contenido = document.getElementById('contenidoPlantillaInput').value.trim();
+    const tipo = document.getElementById('tipoPlantillaSelect').value;
 
-    const nombre = document.getElementById('editNombrePlantilla').value.trim();
-    const tipo = document.getElementById('editTipoPlantilla').value;
-    const contenido = document.getElementById('editContenidoPlantilla').value.trim();
-    
     if (!nombre || !contenido) {
-    mostrarNotificacion('Completa todos los campos');
-    return;
+        mostrarNotificacion('Por favor completa todos los campos');
+        return;
     }
-    
-    try {
-    await updateDoc(doc(db, 'plantillas', plantillaEnEdicion.id), {
+
+    // Calcular el orden más alto actual
+    const maxOrden = plantillasPersonalizadas.length > 0 
+        ? Math.max(...plantillasPersonalizadas.map(p => p.orden !== undefined ? p.orden : 0))
+        : -1;
+
+    await addDoc(collection(db, 'plantillas'), {
         nombre: nombre,
         tipo: tipo,
         contenido: contenido,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
+        orden: maxOrden + 1,  // Asignar orden
+        createdBy: currentUser.email,
+        createdAt: new Date()
     });
 
-    cerrarModalEditar();
-    mostrarNotificacion('Plantilla actualizada - cambio visible para todos ✓');
-    } catch (error) {
-    mostrarNotificacion('Error al actualizar plantilla');
-    }
+    document.getElementById('nombrePlantillaInput').value = '';
+    document.getElementById('contenidoPlantillaInput').value = '';
+    mostrarNotificacion('Plantilla agregada - visible para todos ✓');
+    cambiarTab('plantillas');
 };
 
 // TIPOS
@@ -723,6 +725,159 @@ function renderizarTasas() {
     `).join('');
 }
 
+//PROCESAMIENTO DE RUTAS
+function procesarRuta(rutaRaw) {
+    if (!rutaRaw || !rutaRaw.trim()) return '';
+    
+    // 1. Convertir a mayúsculas y normalizar
+    let rutaNormalizada = rutaRaw.toUpperCase().trim();
+    
+    // 2. Dividir por "//" para obtener segmentos de ruta separados
+    let segmentosRuta = rutaNormalizada
+        .split(/\/\//)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+    
+    // 3. Procesar cada segmento: convertir separadores internos
+    segmentosRuta = segmentosRuta.map(segmento => {
+        // Reemplazar guiones y slashes por un delimitador temporal
+        return segmento
+            .replace(/\s*-\s*/g, '|')
+            .replace(/\s*\/\s*/g, '|')
+            .replace(/\s+/g, '');
+    });
+    
+    // 4. Convertir cada segmento en array de aeropuertos
+    let rutasArray = segmentosRuta.map(segmento => {
+        return segmento.split('|').filter(s => s.length > 0);
+    });
+    
+    // 5. OPTIMIZAR: Fusionar segmentos conectados
+    let rutasOptimizadas = [];
+    let rutaActual = [];
+    
+    for (let i = 0; i < rutasArray.length; i++) {
+        let segmento = rutasArray[i];
+        
+        if (rutaActual.length === 0) {
+            // Primera ruta, agregar todos los aeropuertos
+            rutaActual = [...segmento];
+        } else {
+            // Ver si el primer aeropuerto del segmento actual coincide con el último de rutaActual
+            let ultimoAeropuertoActual = rutaActual[rutaActual.length - 1];
+            let primerAeropuertoNuevo = segmento[0];
+            
+            if (ultimoAeropuertoActual === primerAeropuertoNuevo) {
+                // Se conectan! Agregar el resto del segmento (sin el primero que es duplicado)
+                rutaActual.push(...segmento.slice(1));
+            } else {
+                // No se conectan, guardar la ruta actual y empezar una nueva
+                rutasOptimizadas.push(rutaActual.join('/'));
+                rutaActual = [...segmento];
+            }
+        }
+    }
+    
+    // 6. Agregar la última ruta procesada
+    if (rutaActual.length > 0) {
+        rutasOptimizadas.push(rutaActual.join('/'));
+    }
+    
+    // 7. Unir todas las rutas optimizadas con " // "
+    return rutasOptimizadas.join(' // ');
+}
+
+function actualizarPreviewRuta() {
+    const rutaRaw = document.getElementById('rutaInput').value.trim();
+    const preview = document.getElementById('rutaPreview');
+    
+    if (!rutaRaw) {
+        preview.style.display = 'none';
+        return;
+    }
+    
+    const rutaProcesada = procesarRuta(rutaRaw);
+    const rutaRawNormalizada = rutaRaw.toUpperCase().replace(/\s+/g, ' ');
+    const rutaProcesadaNormalizada = rutaProcesada.replace(/\s+/g, ' ');
+    /*
+    if (rutaProcesadaNormalizada !== rutaRawNormalizada) {
+        preview.style.display = 'block';
+        preview.innerHTML = `<strong>Optimizado:</strong> ${rutaProcesada}`;
+        preview.style.color = '#38a169';
+        preview.style.background = '#f0fff4';
+        preview.style.border = '1px solid #c6f6d5';
+    } else {
+        preview.style.display = 'none';
+    }*/
+}
+/*
+// FORMATEAR RUTA: Reemplazar / por -
+window.formatearRuta = function(input) {
+    let valor = input.value;
+    
+    // Reemplazar cualquier / por -
+    valor = valor.replace(/\//g, '-');
+    
+    // Convertir a mayúsculas
+    valor = valor.toUpperCase();
+    
+    // Actualizar el input
+    input.value = valor;
+    
+    // Re-renderizar plantillas
+    renderizarTodasLasPlantillas();
+};
+*/
+
+/*
+Ejemplos de Optimización
+
+| Entrada Original | Salida Optimizada | Explicación |
+|------------------|-------------------|-------------|
+| `LIM-MIA // MIA-LIM // CUN-LIM` | `LIM/MIA/LIM // CUN/LIM` | MIA conecta con LIM, pero CUN no conecta |
+| `LIM-BOG // BOG-MIA // MIA-LIM` | `LIM/BOG/MIA/LIM` | Todo conectado en una sola ruta |
+| `LIM-MIA // MIA-BOG // BOG-CUN` | `LIM/MIA/BOG/CUN` | Cadena completa conectada |
+| `LIM-MIA // CUN-BOG` | `LIM/MIA // CUN/BOG` | No hay conexión, se mantienen separadas |
+| `LIM-MIA // MIA-LIM // MIA-CUN` | `LIM/MIA/LIM // MIA/CUN` | Primera conexión se une, segunda no |
+| `lim-mia // mia-lim` | `LIM/MIA/LIM` | Todo en mayúsculas y conectado |
+
+Cómo Funciona la Lógica
+Entrada: LIM-MIA // MIA-LIM // CUN-LIM
+
+Paso 1: Dividir por "//"
+  → ["LIM-MIA", "MIA-LIM", "CUN-LIM"]
+
+Paso 2: Convertir cada segmento a array
+  → [["LIM", "MIA"], ["MIA", "LIM"], ["CUN", "LIM"]]
+
+Paso 3: Optimizar
+  - Inicio: rutaActual = ["LIM", "MIA"]
+  
+  - Procesar ["MIA", "LIM"]:
+    * Último de rutaActual = "MIA"
+    * Primero del nuevo = "MIA"
+    * Coinciden! → rutaActual = ["LIM", "MIA", "LIM"]
+  
+  - Procesar ["CUN", "LIM"]:
+    * Último de rutaActual = "LIM"
+    * Primero del nuevo = "CUN"
+    * No coinciden → Guardar "LIM/MIA/LIM", empezar nueva ["CUN", "LIM"]
+
+Paso 4:
+    - Formatea la ruta:
+        → Cambia / por - dentro de cada segmento
+
+    - Resultado dentro del sistema:
+        → ["LIM/MIA/LIM", "CUN/LIM"]
+
+    -- Emplea la función formatoRuta para el formato final --
+
+Paso 5: Resultado final
+  → "LIM-MIA-LIM // CUN-LIM"
+*/
+
+
+
 window.generarCE2 = function() {
     let numero;
     do {
@@ -751,12 +906,31 @@ window.toggleDropdown = function() {
 window.copiarPlantilla = function(plantilla) {
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
-    const fecha = document.getElementById('fechaInput').value.trim() ||'';
+    const fecha = document.getElementById('fechaInput').value.trim() || '';
+    
+    // Limpiar formato de ruta:
+    // 1. Reemplazar / por -
+    // 2. Reemplazar -- por -
+    // 3. Eliminar espacios alrededor de guiones
+    // 4. Reemplazar múltiples guiones por uno solo
+    let rutaFormateada = ruta
+        .replace(/\//g, '-')           // / → -
+        .replace(/\s*--\s*/g, '-')     // -- → -
+        .replace(/\s*-\s*/g, '-')      // espacios alrededor de - → -
+        .replace(/-+/g, '-');          // múltiples - → -
+    
+    // Eliminar aeropuertos duplicados consecutivos
+    const aeropuertos = rutaFormateada.split('-');
+    const aeropuertosSinDuplicados = aeropuertos.filter((aeropuerto, index) => {
+        // Mantener el aeropuerto si es el primero O si es diferente al anterior
+        return index === 0 || aeropuerto !== aeropuertos[index - 1];
+    });
+    rutaFormateada = aeropuertosSinDuplicados.join('-');
     
     let textoFinal = plantilla.contenido
-    .replace(/{RUTA}/g, ruta)
-    .replace(/{CE2}/g, ce2)
-    .replace(/{FECHA}/g, fecha);
+        .replace(/{RUTA}/g, rutaFormateada)
+        .replace(/{CE2}/g, ce2)
+        .replace(/{FECHA}/g, fecha);
     
     copiarTexto(textoFinal);
     mostrarNotificacion('Plantilla copiada');
@@ -767,7 +941,21 @@ function renderizarTodasLasPlantillas() {
     const grid = document.getElementById('templatesGrid');
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
-    const fecha = document.getElementById('fechaInput').value.trim() ||'';
+    const fecha = document.getElementById('fechaInput').value.trim() || '';
+
+    // Limpiar formato de ruta
+    let rutaFormateada = ruta
+        .replace(/\//g, '-')           // / → -
+        .replace(/\s*--\s*/g, '-')     // -- → -
+        .replace(/\s*-\s*/g, '-')      // espacios alrededor de - → -
+        .replace(/-+/g, '-');          // múltiples - → -
+    
+    // Eliminar aeropuertos duplicados consecutivos
+    const aeropuertos = rutaFormateada.split('-');
+    const aeropuertosSinDuplicados = aeropuertos.filter((aeropuerto, index) => {
+        return index === 0 || aeropuerto !== aeropuertos[index - 1];
+    });
+    rutaFormateada = aeropuertosSinDuplicados.join('-');
 
     let todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
 
@@ -797,7 +985,7 @@ function renderizarTodasLasPlantillas() {
 
     grid.innerHTML = todasLasPlantillas.map(plantilla => {
         const contenidoPreview = plantilla.contenido
-            .replace(/{RUTA}/g, ruta)
+            .replace(/{RUTA}/g, rutaFormateada)
             .replace(/{CE2}/g, ce2)
             .replace(/{FECHA}/g, fecha);
         
@@ -925,19 +1113,25 @@ function mostrarNotificacion(mensaje) {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function(){
-    document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
+    const rutaInput = document.getElementById('rutaInput');
+    
+    rutaInput.addEventListener('input', function() {
+        actualizarPreviewRuta();
+        renderizarTodasLasPlantillas();
+    });
+    
     document.getElementById('fechaInput').addEventListener('input', renderizarTodasLasPlantillas);
     
     document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        agregarTasa();
-    }
+        if (e.key === 'Enter') {
+            agregarTasa();
+        }
     });
 
     document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        login();
-    }
+        if (e.key === 'Enter') {
+            login();
+        }
     });
 });
 
@@ -1022,7 +1216,7 @@ window.handleDrop = async function(e, targetPlantilla) {
         await guardarOrdenPlantillas();
         
         // Re-renderizar
-        renderizarTodasLasPlantillas();
+        //renderizarTodasLasPlantillas();
         
         mostrarNotificacion('Orden actualizado ✓');
     }

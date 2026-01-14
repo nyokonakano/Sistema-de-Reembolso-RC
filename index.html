@@ -50,14 +50,22 @@
             <div class="controls-title">Configuración de Plantillas</div>
             <div class="controls-grid">
               <div class="control-group">
-                <label class="control-label">Ruta de Vuelo</label>
+                <label class="control-label">
+                  Ruta de Vuelo
+                  <span style="font-size: 0.75rem; font-weight: normal; color: #718096; margin-left: 8px;">
+                    (auto-optimiza conexiones)
+                  </span>
+                </label>
+                <!--oninput="formatearRuta(this)" desactivado por el momento, añadir en el espacio vcacxio-->
                 <input 
                   type="text" 
                   id="rutaInput" 
                   class="control-input" 
-                  placeholder="Ingresar ruta"
+                  placeholder="Ej: LIM-MIA // MIA-LIM // CUN-LIM"
                   value=""
+                  
                 >
+                <div id="rutaPreview" style="font-size: 0.75rem; color: #718096; margin-top: 4px; min-height: 16px; padding: 4px 8px; background: #f7fafc; border-radius: 4px; display: none;"></div>
               </div>
               <div class="control-group">
                 <label class="control-label">Número CE2</label>
@@ -337,4 +345,3 @@
   <script type="module" src="script.js"></script>
 </body>
 </html>
-
