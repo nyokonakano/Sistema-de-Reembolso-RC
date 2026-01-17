@@ -11,10 +11,10 @@
   <div id="authContainer" class="auth-container" style="display: none;">
     <div class="auth-title">Iniciar Sesión</div>
     <div id="authError" class="auth-error" style="display: none;"></div>
-    <input type="email" id="emailInput" class="auth-input" placeholder="Email">
-    <input type="password" id="passwordInput" class="auth-input" placeholder="Contraseña">
-    <button class="auth-btn" onclick="login()">Iniciar Sesión</button>
-    <button class="auth-btn secondary" onclick="register()">Registrarse</button>
+    <input type="email" id="emailInput" class="auth-input" placeholder="Email" title="Ingresar Email">
+    <input type="password" id="passwordInput" class="auth-input" placeholder="Contraseña" title="Ingresar Contraseña">
+    <button class="auth-btn" onclick="login()" title="Iniciar Sesión">Iniciar Sesión</button>
+    <button class="auth-btn secondary" onclick="register()" title="Registrarse">Registrarse</button>
   </div>
 
   <!-- Loading -->
@@ -37,9 +37,9 @@
     </div>
 
     <div class="tabs">
-      <button class="tab active" onclick="cambiarTab('plantillas')">Plantillas</button>
-      <button class="tab" onclick="cambiarTab('tasas')">Tasas</button>
-      <button class="tab" onclick="cambiarTab('crear')">Crear Plantilla</button>
+      <button class="tab active" onclick="cambiarTab('plantillas')" title="Plantillas">Plantillas</button>
+      <button class="tab" onclick="cambiarTab('tasas')" title="Tasas">Tasas</button>
+      <button class="tab" onclick="cambiarTab('crear')" title="Crear Plantilla">Crear Plantilla</button>
     </div>
 
     <div class="main-grid">
@@ -63,6 +63,7 @@
                   class="control-input" 
                   placeholder="Ej: LIM-MIA // MIA-LIM // CUN-LIM"
                   value=""
+                  title="Ruta de Vuelo"
                   
                 >
                 <div id="rutaPreview" style="font-size: 0.75rem; color: #718096; margin-top: 4px; min-height: 16px; padding: 4px 8px; background: #f7fafc; border-radius: 4px; display: none;"></div>
@@ -78,8 +79,9 @@
                     maxlength="7"
                     style="flex: 1;"
                     readonly
+                    title="Número CE2"
                   >
-                  <button class="generate-btn" onclick="generarCE2()">
+                  <button class="generate-btn" onclick="generarCE2()" title="Generar Número">
                     Generar
                   </button>
                 </div>
@@ -93,6 +95,7 @@
                   class="control-input"
                   placeholder="03-MAR-25"
                   oninput="renderizarTodasLasPlantillas()"
+                  title="Fecha de Vuelo"
                   >
               </div>
 
@@ -122,11 +125,12 @@
                 placeholder="🔍 Buscar plantillas por nombre o contenido..."
                 style="flex: 1; min-width: 200px;"
                 oninput="filtrarPlantillas()"
+                title="Buscar Plantillas"
               >
               <select id="filtroTipoPlantilla" class="form-input" style="min-width: 150px;" onchange="filtrarPlantillas()">
                 <option value="">Todos los tipos</option>
               </select>
-              <button class="generate-btn" onclick="limpiarFiltrosPlantillas()" style="background: #718096;">
+              <button class="generate-btn" onclick="limpiarFiltrosPlantillas()" style="background: #718096;" title="Limpiar Filtros">
                 🧹 Limpiar
               </button>
             </div>
@@ -154,7 +158,7 @@
             </div>
             <div class="periodo-selector">
               <div id="periodoButtons" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
-              <button class="add-periodo-btn" onclick="abrirModalPeriodo()">
+              <button title="Agregar Año" class="add-periodo-btn" onclick="abrirModalPeriodo()">
                 Año
               </button>
             </div>
@@ -168,6 +172,7 @@
               class="control-input" 
               placeholder="🔍 Buscar tasas por nombre..."
               oninput="filtrarTasas()"
+              title="Buscar Tasas"
             >
           </div>
 
@@ -179,6 +184,7 @@
                 id="nombreTasaInput" 
                 class="form-input" 
                 placeholder="Nombre de la tasa"
+                title="Nombre de la Tasa"
               >
               <input 
                 type="number" 
@@ -187,11 +193,12 @@
                 placeholder="Monto ($)"
                 step="0.01"
                 min="0"
+                title="Monto de la Tasa"
               >
               <select id="periodoTasaInput" class="form-input">
               </select>
             </div>
-            <button class="add-btn" onclick="agregarTasa()">
+            <button class="add-btn" onclick="agregarTasa()" title="Agregar Tasa">
               Agregar Tasa
             </button>
           </div>
@@ -200,10 +207,10 @@
             <div class="suma-label">Total Seleccionado</div>
             <div class="suma-monto" id="sumaMonto">$0.00</div>
             <div class="suma-actions">
-              <button class="copiar-suma-btn" onclick="copiarSuma()">
+              <button class="copiar-suma-btn" onclick="copiarSuma()" title="Copiar Total">
                 Copiar Total
               </button>
-              <button class="limpiar-seleccion-btn" onclick="limpiarSeleccion()">
+              <button class="limpiar-seleccion-btn" onclick="limpiarSeleccion()" title="Limpiar Selección">
                 Limpiar
               </button>
             </div>
@@ -232,6 +239,7 @@
                 id="nombrePlantillaInput" 
                 class="form-input" 
                 placeholder="Nombre de la plantilla"
+                title="Nombre de la Plantilla"
               >
             </div>
             <div class="form-row" style="grid-template-columns: 1fr;">
@@ -249,10 +257,11 @@
                   placeholder="Escribe el contenido de tu plantilla aquí..."
                   rows="8"
                   style="resize: vertical; font-family: inherit; line-height: 1.5;"
+                  title="Contenido de la Plantilla"
                 ></textarea>
               </div>
             </div>
-            <button class="add-btn" onclick="agregarPlantillaPersonalizada()">
+            <button class="add-btn" onclick="agregarPlantillaPersonalizada()" title="Crear Plantilla">
               Crear Plantilla
             </button>
           </div>
@@ -260,7 +269,7 @@
           <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 16px; margin-top: 16px;">
             <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Tipos de Plantilla Disponibles:</div>
             <div class="tipo-tags" style="margin-bottom: 12px;">
-              <button class="tipo-tag" onclick="editarTipos()" style="background: #edf2f7; border: 1px dashed #cbd5e0;">
+              <button class="tipo-tag" onclick="editarTipos()" style="background: #edf2f7; border: 1px dashed #cbd5e0;" title="Editar Tipos de Plantillas">
                 Editar Tipos
               </button>
             </div>
@@ -280,13 +289,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">Gestionar Tipos de Plantillas</div>
-        <button class="modal-close" onclick="cerrarModalTipos()">×</button>
+        <button class="modal-close" onclick="cerrarModalTipos()" title="Cerrar Ventana">×</button>
       </div>
       <div class="add-tasa-form">
         <div class="form-row" style="grid-template-columns: 1fr;">
-          <input type="text" id="nuevoTipoInput" class="form-input" placeholder="Nombre del nuevo tipo">
+          <input type="text" id="nuevoTipoInput" class="form-input" placeholder="Nombre del nuevo tipo" title="Nombre del Nuevo Tipo">
         </div>
-        <button class="add-btn" onclick="agregarTipo()">Agregar Tipo</button>
+        <button class="add-btn" onclick="agregarTipo()" title="Agregar Tipo">Agregar Tipo</button>
       </div>
       <div style="margin-top: 20px;">
         <div style="font-weight: 600; color: #2d3748; margin-bottom: 12px;">Tipos Actuales:</div>
@@ -299,7 +308,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">Editar Plantilla</div>
-        <button class="modal-close" onclick="cerrarModalEditar()">×</button>
+        <button class="modal-close" onclick="cerrarModalEditar()" title="Cerrar Ventana">×</button>
       </div>
       <div class="add-tasa-form">
         <div class="form-row" style="grid-template-columns: 1fr;">
@@ -317,7 +326,7 @@
             <textarea id="editContenidoPlantilla" class="form-input" rows="8" style="resize: vertical;"></textarea>
           </div>
         </div>
-        <button class="add-btn" onclick="guardarEdicionPlantilla()">Guardar Cambios</button>
+        <button class="add-btn" onclick="guardarEdicionPlantilla()" title="Guardar Cambios">Guardar Cambios</button>
       </div>
     </div>
   </div>
@@ -326,13 +335,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">Agregar Nuevo Año</div>
-        <button class="modal-close" onclick="cerrarModalPeriodo()">×</button>
+        <button class="modal-close" onclick="cerrarModalPeriodo()" title="Cerrar Ventana">×</button>
       </div>
       <div class="add-tasa-form">
         <div class="form-row" style="grid-template-columns: 1fr;">
           <input type="number" id="nuevoPeriodoInput" class="form-input" placeholder="Agregar año" min="2000" max="2100">
         </div>
-        <button class="add-btn" onclick="agregarPeriodo()">Agregar Año</button>
+        <button class="add-btn" onclick="agregarPeriodo()" title="Agregar Año">Agregar Año</button>
       </div>
       <div style="margin-top: 20px;">
         <div style="font-weight: 600; color: #2d3748; margin-bottom: 12px;">Años Actuales:</div>

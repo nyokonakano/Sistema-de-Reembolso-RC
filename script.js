@@ -341,7 +341,7 @@ window.abrirModalEditarTasa = function(tasa) {
     <div class="modal-content">
         <div class="modal-header">
         <div class="modal-title">Editar Tasa</div>
-        <button class="modal-close" onclick="cerrarModalEditarTasa()">×</button>
+        <button class="modal-close" onclick="cerrarModalEditarTasa()" title="Cerrar Modal">×</button>
         </div>
         <div class="add-tasa-form">
         <div class="form-row" style="grid-template-columns: 1fr;">
@@ -351,6 +351,7 @@ window.abrirModalEditarTasa = function(tasa) {
             class="form-input" 
             placeholder="Nombre de la tasa"
             value="${tasa.nombre}"
+            title="Nombre de la tasa"
             >
         </div>
         <div class="form-row" style="grid-template-columns: 1fr 1fr;">
@@ -361,12 +362,13 @@ window.abrirModalEditarTasa = function(tasa) {
             placeholder="Monto ($)"
             step="0.01"
             value="${tasa.monto}"
+            title="Monto de la tasa"
             >
             <select id="editPeriodoTasa" class="form-input">
             ${periodos.map(p => `<option value="${p}" ${p === tasa.periodo ? 'selected' : ''}>${p}</option>`).join('')}
             </select>
         </div>
-        <button class="add-btn" onclick="guardarEdicionTasa('${tasa.id}')">
+        <button class="add-btn" onclick="guardarEdicionTasa('${tasa.id}')" title="Guardar Cambios">
             Guardar Cambios
         </button>
         </div>
@@ -1011,13 +1013,13 @@ function renderizarTodasLasPlantillas() {
                     </div>
                     ${puedeEditar ? `
                         <div class="template-actions">
-                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})'>✏️</button>
-                        <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
+                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})' title="Editar Plantilla">✏️</button>
+                        <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')" title="Eliminar Plantilla">🗑️</button>
                         </div>
                     ` : ''}
                 </div>
                 <div class="template-content">${contenidoPreview}</div>
-                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
+                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})' title="Copiar Plantilla">Copiar Plantilla</button>
             </div>
         `;
     }).join('');
@@ -1039,7 +1041,7 @@ function renderizarListaPeriodos() {
     lista.innerHTML = periodos.map(periodo => `
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
         <span style="font-weight: 500; color: #2d3748;">${periodo}</span>
-        <button class="delete-btn" onclick="eliminarPeriodo(${periodo})">Eliminar</button>
+        <button class="delete-btn" onclick="eliminarPeriodo(${periodo})" title="Eliminar Periodo">Eliminar</button>
     </div>
     `).join('');
 }
@@ -1059,7 +1061,7 @@ function renderizarListaTipos() {
     lista.innerHTML = tiposPlantilla.map(tipo => `
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
         <span style="font-weight: 500; color: #2d3748;">${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</span>
-        <button class="delete-btn" onclick="eliminarTipo('${tipo}')">Eliminar</button>
+        <button class="delete-btn" onclick="eliminarTipo('${tipo}')" title="Eliminar Tipo">Eliminar</button>
     </div>
     `).join('');
 }
