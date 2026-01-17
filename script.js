@@ -169,14 +169,22 @@ function activarListenersRealTime() {
     
     // Listener para PLANTILLAS
     onSnapshot(collection(db, 'plantillas'), (snapshot) => {
-    plantillasPersonalizadas = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        predeterminada: false
-    }));
-    renderizarTodasLasPlantillas();
+        plantillasPersonalizadas = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            predeterminada: false
+        }));
+        
+        // ORDENAR por el campo 'orden'
+        plantillasPersonalizadas.sort((a, b) => {
+            const ordenA = a.orden !== undefined ? a.orden : 999999;
+            const ordenB = b.orden !== undefined ? b.orden : 999999;
+            return ordenA - ordenB;
+        });
+        
+        renderizarTodasLasPlantillas();
     });
-    
+        
     // Listener para PERÍODOS
     onSnapshot(collection(db, 'periodos'), (snapshot) => {
     if (!snapshot.empty) {
@@ -433,16 +441,22 @@ window.agregarPlantillaPersonalizada = async function() {
     const tipo = document.getElementById('tipoPlantillaSelect').value;
 
     if (!nombre || !contenido) {
-    mostrarNotificacion('Por favor completa todos los campos');
-    return;
+        mostrarNotificacion('Por favor completa todos los campos');
+        return;
     }
 
+    // Calcular el orden más alto actual
+    const maxOrden = plantillasPersonalizadas.length > 0 
+        ? Math.max(...plantillasPersonalizadas.map(p => p.orden !== undefined ? p.orden : 0))
+        : -1;
+
     await addDoc(collection(db, 'plantillas'), {
-    nombre: nombre,
-    tipo: tipo,
-    contenido: contenido,
-    createdBy: currentUser.email,
-    createdAt: new Date()
+        nombre: nombre,
+        tipo: tipo,
+        contenido: contenido,
+        orden: maxOrden + 1,  // ✅ Asignar orden
+        createdBy: currentUser.email,
+        createdAt: new Date()
     });
 
     document.getElementById('nombrePlantillaInput').value = '';
@@ -727,66 +741,48 @@ function renderizarTasas() {
     `).join('');
 }
 
-//PROCESAMIENTO DE RUTAS
-function procesarRuta(rutaRaw) {
-    if (!rutaRaw || !rutaRaw.trim()) return '';
+// FUNCIÓN PARA PROCESAR RUTAS
+function procesarRuta(ruta) {
+    // Dividir por // para obtener los tramos
+    let tramos = ruta.split('//').map(t => t.trim());
     
-    // 1. Convertir a mayúsculas y normalizar
-    let rutaNormalizada = rutaRaw.toUpperCase().trim();
+    // Limpiar cada tramo individualmente
+    tramos = tramos.map(tramo => limpiarTramo(tramo));
     
-    // 2. Dividir por "//" para obtener segmentos de ruta separados
-    let segmentosRuta = rutaNormalizada
-        .split(/\/\//)
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
+    // Unificar tramos adyacentes si el final de uno = inicio del siguiente
+    const tramosUnificados = [];
     
-    // 3. Procesar cada segmento: convertir separadores internos
-    segmentosRuta = segmentosRuta.map(segmento => {
-        // Reemplazar guiones y slashes por un delimitador temporal
-        return segmento
-            .replace(/\s*-\s*/g, '|')
-            .replace(/\s*\/\s*/g, '|')
-            .replace(/\s+/g, '');
-    });
-    
-    // 4. Convertir cada segmento en array de aeropuertos
-    let rutasArray = segmentosRuta.map(segmento => {
-        return segmento.split('|').filter(s => s.length > 0);
-    });
-    
-    // 5. OPTIMIZAR: Fusionar segmentos conectados
-    let rutasOptimizadas = [];
-    let rutaActual = [];
-    
-    for (let i = 0; i < rutasArray.length; i++) {
-        let segmento = rutasArray[i];
-        
-        if (rutaActual.length === 0) {
-            // Primera ruta, agregar todos los aeropuertos
-            rutaActual = [...segmento];
+    for (let i = 0; i < tramos.length; i++) {
+        if (tramosUnificados.length === 0) {
+            // Primer tramo, agregarlo directamente
+            tramosUnificados.push(tramos[i]);
         } else {
-            // Ver si el primer aeropuerto del segmento actual coincide con el último de rutaActual
-            let ultimoAeropuertoActual = rutaActual[rutaActual.length - 1];
-            let primerAeropuertoNuevo = segmento[0];
+            // Obtener el último tramo unificado
+            const ultimoTramo = tramosUnificados[tramosUnificados.length - 1];
+            const tramoActual = tramos[i];
             
-            if (ultimoAeropuertoActual === primerAeropuertoNuevo) {
-                // Se conectan! Agregar el resto del segmento (sin el primero que es duplicado)
-                rutaActual.push(...segmento.slice(1));
+            // Dividir en aeropuertos
+            const aeropuertosUltimo = ultimoTramo.split('-');
+            const aeropuertosActual = tramoActual.split('-');
+            
+            // Verificar si el final del último = inicio del actual
+            const finalUltimo = aeropuertosUltimo[aeropuertosUltimo.length - 1];
+            const inicioActual = aeropuertosActual[0];
+            
+            if (finalUltimo === inicioActual) {
+                // UNIFICAR: eliminar el duplicado y juntar
+                aeropuertosActual.shift(); // Eliminar el primer elemento del actual
+                const tramoUnificado = aeropuertosUltimo.concat(aeropuertosActual).join('-');
+                tramosUnificados[tramosUnificados.length - 1] = tramoUnificado;
             } else {
-                // No se conectan, guardar la ruta actual y empezar una nueva
-                rutasOptimizadas.push(rutaActual.join('/'));
-                rutaActual = [...segmento];
+                // NO UNIFICAR: mantener separado
+                tramosUnificados.push(tramoActual);
             }
         }
     }
     
-    // 6. Agregar la última ruta procesada
-    if (rutaActual.length > 0) {
-        rutasOptimizadas.push(rutaActual.join('/'));
-    }
-    
-    // 7. Unir todas las rutas optimizadas con " // "
-    return rutasOptimizadas.join(' // ');
+    // Unir los tramos con //
+    return tramosUnificados.join(' // ');
 }
 
 function actualizarPreviewRuta() {
@@ -812,24 +808,28 @@ function actualizarPreviewRuta() {
         preview.style.display = 'none';
     }*/
 }
-/*
-// FORMATEAR RUTA: Reemplazar / por -
-window.formatearRuta = function(input) {
-    let valor = input.value;
+
+// FUNCIÓN PARA LIMPIAR UN TRAMO DE RUTA
+function limpiarTramo(tramo) {
+    // 1. Reemplazar / por -
+    // 2. Reemplazar -- por -
+    // 3. Eliminar espacios alrededor de guiones
+    // 4. Reemplazar múltiples guiones por uno solo
+    let tramoLimpio = tramo
+        .replace(/\//g, '-')           // / → -
+        .replace(/\s*--\s*/g, '-')     // -- → -
+        .replace(/\s*-\s*/g, '-')      // espacios alrededor de - → -
+        .replace(/-+/g, '-')           // múltiples - → -
+        .trim();
     
-    // Reemplazar cualquier / por -
-    valor = valor.replace(/\//g, '-');
+    // 5. Eliminar aeropuertos duplicados consecutivos
+    const aeropuertos = tramoLimpio.split('-').filter(a => a.trim() !== '');
+    const aeropuertosSinDuplicados = aeropuertos.filter((aeropuerto, index) => {
+        return index === 0 || aeropuerto !== aeropuertos[index - 1];
+    });
     
-    // Convertir a mayúsculas
-    valor = valor.toUpperCase();
-    
-    // Actualizar el input
-    input.value = valor;
-    
-    // Re-renderizar plantillas
-    renderizarTodasLasPlantillas();
-};
-*/
+    return aeropuertosSinDuplicados.join('-');
+}
 
 /*
 Ejemplos de Optimización
@@ -872,7 +872,7 @@ Paso 4:
     - Resultado dentro del sistema:
         → ["LIM/MIA/LIM", "CUN/LIM"]
 
-    -- Emplea la función formatoRuta para el formato final --
+    -- Emplea la función limpiarTramo para el formato final --
 
 Paso 5: Resultado final
   → "LIM-MIA-LIM // CUN-LIM"
@@ -910,24 +910,8 @@ window.copiarPlantilla = function(plantilla) {
     const ce2 = document.getElementById('ce2Input').value;
     const fecha = document.getElementById('fechaInput').value.trim() || '';
     
-    // Limpiar formato de ruta:
-    // 1. Reemplazar / por -
-    // 2. Reemplazar -- por -
-    // 3. Eliminar espacios alrededor de guiones
-    // 4. Reemplazar múltiples guiones por uno solo
-    let rutaFormateada = ruta
-        .replace(/\//g, '-')           // / → -
-        .replace(/\s*--\s*/g, '-')     // -- → -
-        .replace(/\s*-\s*/g, '-')      // espacios alrededor de - → -
-        .replace(/-+/g, '-');          // múltiples - → -
-    
-    // Eliminar aeropuertos duplicados consecutivos
-    const aeropuertos = rutaFormateada.split('-');
-    const aeropuertosSinDuplicados = aeropuertos.filter((aeropuerto, index) => {
-        // Mantener el aeropuerto si es el primero O si es diferente al anterior
-        return index === 0 || aeropuerto !== aeropuertos[index - 1];
-    });
-    rutaFormateada = aeropuertosSinDuplicados.join('-');
+    // Procesar ruta con lógica inteligente
+    const rutaFormateada = procesarRuta(ruta);
     
     let textoFinal = plantilla.contenido
         .replace(/{RUTA}/g, rutaFormateada)
@@ -945,19 +929,8 @@ function renderizarTodasLasPlantillas() {
     const ce2 = document.getElementById('ce2Input').value;
     const fecha = document.getElementById('fechaInput').value.trim() || '';
 
-    // Limpiar formato de ruta
-    let rutaFormateada = ruta
-        .replace(/\//g, '-')           // / → -
-        .replace(/\s*--\s*/g, '-')     // -- → -
-        .replace(/\s*-\s*/g, '-')      // espacios alrededor de - → -
-        .replace(/-+/g, '-');          // múltiples - → -
-    
-    // Eliminar aeropuertos duplicados consecutivos
-    const aeropuertos = rutaFormateada.split('-');
-    const aeropuertosSinDuplicados = aeropuertos.filter((aeropuerto, index) => {
-        return index === 0 || aeropuerto !== aeropuertos[index - 1];
-    });
-    rutaFormateada = aeropuertosSinDuplicados.join('-');
+    // Usar la función de procesamiento inteligente
+    const rutaFormateada = procesarRuta(ruta);
 
     let todasLasPlantillas = [...plantillasPredeterminadas, ...plantillasPersonalizadas];
 
@@ -1013,13 +986,13 @@ function renderizarTodasLasPlantillas() {
                     </div>
                     ${puedeEditar ? `
                         <div class="template-actions">
-                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})' title="Editar Plantilla">✏️</button>
-                        <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')" title="Eliminar Plantilla">🗑️</button>
+                        <button class="edit-template-btn" onclick='abrirModalEditar(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})'>✏️</button>
+                        <button class="delete-template-btn" onclick="eliminarPlantillaPersonalizada('${plantilla.id}')">🗑️</button>
                         </div>
                     ` : ''}
                 </div>
                 <div class="template-content">${contenidoPreview}</div>
-                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})' title="Copiar Plantilla">Copiar Plantilla</button>
+                <button class="copy-btn" onclick='copiarPlantilla(${JSON.stringify(plantilla).replace(/"/g, "&quot;").replace(/'/g, "&apos;")})'>Copiar Plantilla</button>
             </div>
         `;
     }).join('');
@@ -1214,11 +1187,10 @@ window.handleDrop = async function(e, targetPlantilla) {
         // Actualizar array local
         plantillasPersonalizadas = newOrder;
         
-        // Guardar orden en Firebase
+        // Guardar orden en Firebase (el listener se encargará de actualizar la UI)
         await guardarOrdenPlantillas();
         
-        // Re-renderizar
-        //renderizarTodasLasPlantillas();
+        // NO LLAMAR renderizarTodasLasPlantillas() aquí
         
         mostrarNotificacion('Orden actualizado ✓');
     }
