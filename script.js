@@ -909,6 +909,7 @@ window.copiarPlantilla = function(plantilla) {
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
     const fecha = document.getElementById('fechaInput').value.trim() || '';
+    const numeroRI = document.getElementById('numeroRIInput').value.trim() || '';
     
     // Procesar ruta con lógica inteligente
     const rutaFormateada = procesarRuta(ruta);
@@ -916,7 +917,8 @@ window.copiarPlantilla = function(plantilla) {
     let textoFinal = plantilla.contenido
         .replace(/{RUTA}/g, rutaFormateada)
         .replace(/{CE2}/g, ce2)
-        .replace(/{FECHA}/g, fecha);
+        .replace(/{FECHA}/g, fecha)
+        .replace(/{NUMERO_RI}/g, numeroRI);
     
     copiarTexto(textoFinal);
     mostrarNotificacion('Plantilla copiada');
@@ -928,6 +930,7 @@ function renderizarTodasLasPlantillas() {
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
     const fecha = document.getElementById('fechaInput').value.trim() || '';
+    const numeroRI = document.getElementById('numeroRIInput').value.trim() || '';
 
     // Usar la función de procesamiento inteligente
     const rutaFormateada = procesarRuta(ruta);
@@ -962,7 +965,8 @@ function renderizarTodasLasPlantillas() {
         const contenidoPreview = plantilla.contenido
             .replace(/{RUTA}/g, rutaFormateada)
             .replace(/{CE2}/g, ce2)
-            .replace(/{FECHA}/g, fecha);
+            .replace(/{FECHA}/g, fecha)
+            .replace(/{NUMERO_RI}/g, numeroRI);
         
         const tipoClass = plantilla.tipo || 'reembolso';
         const puedeEditar = !plantilla.predeterminada;
@@ -1088,7 +1092,9 @@ function mostrarNotificacion(mensaje) {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function(){
-    const rutaInput = document.getElementById('rutaInput');
+    document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
+    document.getElementById('fechaInput').addEventListener('input', renderizarTodasLasPlantillas);
+    document.getElementById('numeroRIInput').addEventListener('input', renderizarTodasLasPlantillas);
     
     rutaInput.addEventListener('input', function() {
         actualizarPreviewRuta();

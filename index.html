@@ -113,6 +113,18 @@
                   oninput="renderizarTodasLasPlantillas()"
                 >
               </div>-->
+
+              <div class="control-group">
+                <label for="" class="control-label">Número RI</label>
+                <input 
+                  type="text" 
+                  id="numeroRIInput" 
+                  class="control-input"
+                  placeholder="1900..."
+                  oninput="renderizarTodasLasPlantillas()"
+                  title="Número de Reembolso Indirecto"
+                >
+              </div>
             </div>
           </div>
 
@@ -251,7 +263,7 @@
             </div>
             <div class="form-row" style="grid-template-columns: 1fr;">
               <div class="control-group">
-                <label class="control-label">Contenido (usa {RUTA}, {CE2} y {FECHA} como variables)</label>
+                <label class="control-label">Contenido (usa {RUTA}, {CE2}, {FECHA} y {NUMERO_RI} como variables)</label>
                 <textarea 
                   id="contenidoPlantillaInput" 
                   class="form-input" 
