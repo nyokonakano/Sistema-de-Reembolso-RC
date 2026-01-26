@@ -1233,3 +1233,120 @@ async function guardarOrdenPlantillas() {
         mostrarNotificacion('Error al guardar el orden');
     }
 }
+
+// Sistema de doble ESC
+let lastEscapeTime = 0;
+let camposGuardados = {};
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const now = Date.now();
+    
+    if (now - lastEscapeTime < 500) {
+      // Doble ESC detectado
+      limpiarTodosCampos();
+    }
+    
+    lastEscapeTime = now;
+  }
+});
+
+function limpiarTodosCampos() {
+  // Guardar valores actuales para undo
+  camposGuardados = {
+    ruta: document.getElementById('rutaInput').value,
+    fecha: document.getElementById('fechaInput').value,
+    numeroRI: document.getElementById('numeroRIInput').value,
+    searchPlantillas: document.getElementById('searchPlantillas').value,
+    searchTasas: document.getElementById('searchTasas').value
+  };
+  
+  // Crear overlay de limpieza (versión rápida)
+  const overlay = document.createElement('div');
+  overlay.className = 'cleaning-overlay';
+  overlay.innerHTML = `
+    <div class="cleaning-content-fast">
+      <div class="cleaning-icon-fast">🧹</div>
+      <div class="cleaning-text-fast">Limpiando campos...</div>
+      <div class="cleaning-progress-fast">
+        <div class="cleaning-bar-fast" id="cleaningBarFast"></div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  
+  // Animar aparición del overlay
+  setTimeout(() => overlay.classList.add('active'), 10);
+  
+  // Array de campos
+  const campos = ['rutaInput', 'fechaInput', 'numeroRIInput', 'searchPlantillas', 'searchTasas'];
+  
+  // Progreso animado
+  const bar = document.getElementById('cleaningBarFast');
+  let progreso = 0;
+  const progressInterval = setInterval(() => {
+    progreso += 10;
+    if (bar) bar.style.width = progreso + '%';
+    if (progreso >= 100) clearInterval(progressInterval);
+  }, 30);
+  
+  // Limpiar todos los campos rápidamente con efecto visual
+  campos.forEach((id, index) => {
+    setTimeout(() => {
+      const elemento = document.getElementById(id);
+      if (elemento) {
+        elemento.classList.add('clearing-flash');
+        
+        setTimeout(() => {
+          elemento.value = '';
+          elemento.classList.remove('clearing-flash');
+          elemento.dispatchEvent(new Event('input', { bubbles: true }));
+        }, 100);
+      }
+    }, index * 150); // 150ms entre campos = 750ms total
+  });
+  
+  // Generar CE2 y cerrar
+  setTimeout(() => {
+    document.querySelector('.cleaning-text-fast').textContent = '✓ Listo!';
+    document.querySelector('.cleaning-icon-fast').textContent = '✓';
+    
+    generarCE2();
+    
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        overlay.remove();
+        mostrarNotificacionConUndo('🧹 Campos limpiados', deshacerLimpieza);
+      }, 200);
+    }, 400);
+  }, 1000);
+}
+
+function deshacerLimpieza() {
+  document.getElementById('rutaInput').value = camposGuardados.ruta;
+  document.getElementById('fechaInput').value = camposGuardados.fecha;
+  document.getElementById('numeroRIInput').value = camposGuardados.numeroRI;
+  document.getElementById('searchPlantillas').value = camposGuardados.searchPlantillas;
+  document.getElementById('searchTasas').value = camposGuardados.searchTasas;
+  
+  renderizarTodasLasPlantillas();
+  filtrarTasas();
+  
+  mostrarNotificacion('↩️ Cambios revertidos');
+}
+
+// Notificación con botón de Undo
+function mostrarNotificacionConUndo(mensaje, undoCallback) {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `
+    <span>${mensaje}</span>
+    <button class="undo-btn" onclick="undoCallback()">↩️ Deshacer</button>
+  `;
+  toast.classList.add('show', 'with-undo');
+  
+  setTimeout(() => {
+    toast.classList.remove('show', 'with-undo');
+    toast.innerHTML = 'Texto copiado';
+  }, 5000);
+}

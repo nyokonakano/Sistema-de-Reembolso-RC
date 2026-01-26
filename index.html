@@ -6,6 +6,7 @@
   <title>Reembolsos RC - Continental Travel</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+  <link rel="stylesheet" href="tutorial/tutorial.css">
 </head>
 <body>
   <!-- Auth Container -->
@@ -31,6 +32,7 @@
         <h1>Sistema de Reembolsos RC</h1>
         <p>Continental Travel - Plantillas de Reembolso</p>
       </div>
+
       <div class="user-info">
         <span class="user-email" id="userEmail"></span>
         <button class="logout-btn" onclick="logout()">Salir</button>
@@ -53,10 +55,10 @@
               <div class="control-group">
                 <label class="control-label">
                   Ruta de Vuelo
-                  <span style="font-size: 0.75rem; font-weight: normal; color: #718096; margin-left: 8px;">
+                  <!--<span style="font-size: 0.75rem; font-weight: normal; color: #718096; margin-left: 8px;">
                     (auto-optimiza conexiones)
                   </span>
-                </label>
+                </label> -->
                 <!--oninput="formatearRuta(this)" desactivado por el momento, añadir en el espacio vcacxio-->
                 <input 
                   type="text" 
@@ -365,5 +367,8 @@
 
   <!-- Firebase SDKs -->
   <script type="module" src="script.js"></script>
+
+  <!-- Tutorial Script -->
+  <script src="tutorial/tutorial.js"></script>
 </body>
 </html>

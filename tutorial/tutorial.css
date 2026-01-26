@@ -1,0 +1,214 @@
+/* Overlay */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9998;
+  display: none;
+}
+
+.tutorial-overlay.active {
+  display: block;
+}
+
+/* Highlight */
+.tutorial-highlight {
+  position: relative;
+  z-index: 9999 !important;
+  outline: 2px solid #3182ce;
+  outline-offset: 4px;
+  border-radius: 6px;
+  background-clip: padding-box;
+}
+
+/* Tooltip */
+.tutorial-tooltip {
+  position: fixed;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 360px;
+  z-index: 10000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  animation: fadeSlide 0.25s ease;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tutorial-tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tutorial-step-counter {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #718096;
+}
+
+.tutorial-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #a0aec0;
+  cursor: pointer;
+}
+
+.tutorial-close-btn:hover {
+  color: #4a5568;
+}
+
+.tutorial-tooltip-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.tutorial-tooltip-description {
+  font-size: 0.9rem;
+  color: #4a5568;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.tutorial-tooltip-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tutorial-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.tutorial-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.tutorial-btn-primary {
+  background: #3182ce;
+  color: white;
+}
+
+.tutorial-btn-primary:hover {
+  background: #2c5282;
+}
+
+.tutorial-btn-secondary {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.tutorial-btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.tutorial-btn-skip {
+  background: none;
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+.tutorial-btn-skip:hover {
+  color: #4a5568;
+}
+
+/* Progreso */
+.tutorial-progress {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.tutorial-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e2e8f0;
+}
+
+.tutorial-progress-dot.active {
+  background: #3182ce;
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* Flecha */
+.tutorial-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.arrow-top {
+  border-width: 0 8px 8px 8px;
+  border-color: transparent transparent white transparent;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.arrow-bottom {
+  border-width: 8px 8px 0 8px;
+  border-color: white transparent transparent transparent;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* FAB */
+.tutorial-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #3182ce;
+  color: white;
+  font-size: 1.4rem;
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tutorial-fab:hover {
+  background: #2c5282;
+}
+
+.tutorial-fab.hidden {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tutorial-tooltip {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    top: auto !important;
+  }
+}

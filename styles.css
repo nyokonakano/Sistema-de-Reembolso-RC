@@ -922,3 +922,167 @@ select.form-input {
 .template-card[draggable="true"]:hover .drag-handle {
     color: #3182ce;
 }
+
+/* Botón Tutorial */
+/*.tutorial-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutorial-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
+}
+
+@media (max-width: 768px) {
+    .tutorial-btn {
+        font-size: 0.85rem;
+        padding: 8px 16px;
+    }
+}*/
+
+@keyframes clearing-animation {
+  0% {
+    background: #fff3cd;
+    transform: translateX(0);
+  }
+  50% {
+    background: #ffeaa7;
+    transform: translateX(-5px);
+  }
+  100% {
+    background: white;
+    transform: translateX(0);
+  }
+}
+
+/* Overlay de limpieza */
+.cleaning-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.cleaning-overlay.active {
+  opacity: 1;
+}
+
+.cleaning-content-fast {
+  background: white;
+  padding: 30px 40px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cleaning-icon-fast {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  animation: spinFast 0.6s ease-in-out;
+}
+
+@keyframes spinFast {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.cleaning-text-fast {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 16px;
+}
+
+.cleaning-progress-fast {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cleaning-bar-fast {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  width: 0%;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
+/* Flash en campo que se limpia */
+.clearing-flash {
+  animation: flashClear 0.3s ease !important;
+  border-color: #667eea !important;
+}
+
+@keyframes flashClear {
+  0%, 100% {
+    background: white;
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+  50% {
+    background: #ebf4ff;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cleaning-content-fast {
+    min-width: auto;
+    width: calc(100vw - 40px);
+    padding: 24px 20px;
+  }
+  
+  .cleaning-icon-fast {
+    font-size: 2.5rem;
+  }
+}
+
+.undo-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.undo-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
