@@ -36,6 +36,8 @@ let filtrosBusqueda = {
     tipoPlantilla: '',
     tasas: ''
 };
+// variable de reemboso
+let tipoTasaActual = 'reembolsable'; // 'reembolsable' o 'no-reembolsable'
 
 const plantillasPredeterminadas = [
     {
@@ -304,32 +306,62 @@ async function cargarTasas() {
 }
 
 window.agregarTasa = async function() {
-    const nombre = document.getElementById('nombreTasaInput').value.trim();
-    const monto = document.getElementById('montoTasaInput').value.trim();
-    const periodo = parseInt(document.getElementById('periodoTasaInput').value);
-
-    if (!nombre || !monto) {
-    mostrarNotificacion('Completa todos los campos');
-    return;
+  const noReembolsable = document.getElementById('noReembolsableCheckbox').checked;
+  const comentario = document.getElementById('comentarioTasaInput').value.trim();
+  
+  let nombre, monto, periodo;
+  
+  if (noReembolsable) {
+    // Tasa No Reembolsable (solo nombre)
+    nombre = document.getElementById('nombreTasaNoReembolsableInput').value.trim();
+    monto = 0; // Sin monto
+    periodo = 0; // Sin año específico
+    
+    if (!nombre) {
+      mostrarNotificacion('Ingresa el nombre de la tasa');
+      return;
     }
+  } else {
+    // Tasa Reembolsable (nombre, monto, año)
+    nombre = document.getElementById('nombreTasaInput').value.trim();
+    monto = document.getElementById('montoTasaInput').value.trim();
+    periodo = parseInt(document.getElementById('periodoTasaInput').value);
+    
+    if (!nombre || !monto) {
+      mostrarNotificacion('Completa todos los campos');
+      return;
+    }
+    
+    monto = parseFloat(monto);
+  }
 
-    try {
+  try {
     await addDoc(collection(db, 'tasas'), {
-        nombre: nombre,
-        monto: parseFloat(monto),
-        periodo: periodo,
-        createdBy: currentUser.email,
-        createdAt: new Date()
+      nombre: nombre,
+      monto: monto,
+      periodo: periodo,
+      noReembolsable: noReembolsable,
+      comentario: comentario || '',
+      createdBy: currentUser.email,
+      createdAt: new Date()
     });
 
-    document.getElementById('nombreTasaInput').value = '';
-    document.getElementById('montoTasaInput').value = '';
-    document.getElementById('nombreTasaInput').focus();
-    mostrarNotificacion('Tasa agregada - visible para todos ✓');
-    } catch (error) {
+    // Limpiar campos
+    if (noReembolsable) {
+      document.getElementById('nombreTasaNoReembolsableInput').value = '';
+    } else {
+      document.getElementById('nombreTasaInput').value = '';
+      document.getElementById('montoTasaInput').value = '';
+    }
+    document.getElementById('noReembolsableCheckbox').checked = false;
+    document.getElementById('comentarioTasaInput').value = '';
+    toggleCamposTasa(); // Resetear vista
+    
+    mostrarNotificacion(`Tasa ${noReembolsable ? 'no reembolsable' : 'reembolsable'} agregada ✓`);
+  } catch (error) {
     console.error('Error:', error);
     mostrarNotificacion('Error al agregar tasa');
-    }
+  }
 };
 
 window.eliminarTasa = async function(id) {
@@ -342,47 +374,94 @@ window.eliminarTasa = async function(id) {
 };
 
 window.abrirModalEditarTasa = function(tasa) {
-    const modal = document.createElement('div');
-    modal.className = 'modal show';
-    modal.id = 'modalEditarTasa';
-    modal.innerHTML = `
+  const esNoReembolsable = tasa.noReembolsable;
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal show';
+  modal.id = 'modalEditarTasa';
+  modal.innerHTML = `
     <div class="modal-content">
-        <div class="modal-header">
+      <div class="modal-header">
         <div class="modal-title">Editar Tasa</div>
-        <button class="modal-close" onclick="cerrarModalEditarTasa()" title="Cerrar Modal">×</button>
+        <button class="modal-close" onclick="cerrarModalEditarTasa()">×</button>
+      </div>
+      <div class="add-tasa-form">
+        <div class="form-row" style="grid-template-columns: 1fr; margin-bottom: 12px;">
+          <label class="checkbox-label-tasa">
+            <input type="checkbox" id="editNoReembolsable" ${esNoReembolsable ? 'checked' : ''} onchange="toggleCamposEditarTasa()">
+            <span>🚫 Marcar como No Reembolsable</span>
+          </label>
         </div>
-        <div class="add-tasa-form">
-        <div class="form-row" style="grid-template-columns: 1fr;">
+        
+        <!-- Campos para tasa reembolsable -->
+        <div id="editCamposReembolsable" style="display: ${esNoReembolsable ? 'none' : 'block'};">
+          <div class="form-row" style="grid-template-columns: 1fr;">
             <input 
-            type="text" 
-            id="editNombreTasa" 
-            class="form-input" 
-            placeholder="Nombre de la tasa"
-            value="${tasa.nombre}"
-            title="Nombre de la tasa"
+              type="text" 
+              id="editNombreTasa" 
+              class="form-input" 
+              placeholder="Nombre de la tasa"
+              value="${esNoReembolsable ? '' : tasa.nombre}"
             >
-        </div>
-        <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+          </div>
+          <div class="form-row" style="grid-template-columns: 1fr 1fr;">
             <input 
-            type="number" 
-            id="editMontoTasa" 
-            class="form-input" 
-            placeholder="Monto ($)"
-            step="0.01"
-            value="${tasa.monto}"
-            title="Monto de la tasa"
+              type="number" 
+              id="editMontoTasa" 
+              class="form-input" 
+              placeholder="Monto ($)"
+              step="0.01"
+              value="${esNoReembolsable ? '' : tasa.monto}"
             >
             <select id="editPeriodoTasa" class="form-input">
-            ${periodos.map(p => `<option value="${p}" ${p === tasa.periodo ? 'selected' : ''}>${p}</option>`).join('')}
+              ${periodos.map(p => `<option value="${p}" ${p === tasa.periodo ? 'selected' : ''}>${p}</option>`).join('')}
             </select>
+          </div>
         </div>
-        <button class="add-btn" onclick="guardarEdicionTasa('${tasa.id}')" title="Guardar Cambios">
-            Guardar Cambios
+        
+        <!-- Campos para tasa no reembolsable -->
+        <div id="editCamposNoReembolsable" style="display: ${esNoReembolsable ? 'block' : 'none'};">
+          <div class="form-row" style="grid-template-columns: 1fr;">
+            <input 
+              type="text" 
+              id="editNombreTasaNoReembolsable" 
+              class="form-input" 
+              placeholder="Nombre de la tasa no reembolsable"
+              value="${esNoReembolsable ? tasa.nombre : ''}"
+            >
+          </div>
+        </div>
+        
+        <div class="form-row" style="grid-template-columns: 1fr; margin-top: 12px;">
+          <textarea 
+            id="editComentarioTasa" 
+            class="form-input" 
+            placeholder="Comentario u observación (opcional)..."
+            rows="3"
+            style="resize: vertical; font-family: inherit;"
+          >${tasa.comentario || ''}</textarea>
+        </div>
+        <button class="add-btn" onclick="guardarEdicionTasa('${tasa.id}')">
+          Guardar Cambios
         </button>
-        </div>
+      </div>
     </div>
-    `;
-    document.body.appendChild(modal);
+  `;
+  document.body.appendChild(modal);
+};
+
+window.toggleCamposEditarTasa = function() {
+  const noReembolsable = document.getElementById('editNoReembolsable').checked;
+  const camposReembolsable = document.getElementById('editCamposReembolsable');
+  const camposNoReembolsable = document.getElementById('editCamposNoReembolsable');
+  
+  if (noReembolsable) {
+    camposReembolsable.style.display = 'none';
+    camposNoReembolsable.style.display = 'block';
+  } else {
+    camposReembolsable.style.display = 'block';
+    camposNoReembolsable.style.display = 'none';
+  }
 };
 
 window.cerrarModalEditarTasa = function() {
@@ -391,29 +470,47 @@ window.cerrarModalEditarTasa = function() {
 };
 
 window.guardarEdicionTasa = async function(id) {
-    const nombre = document.getElementById('editNombreTasa').value.trim();
-    const monto = parseFloat(document.getElementById('editMontoTasa').value);
-    const periodo = parseInt(document.getElementById('editPeriodoTasa').value);
+  const noReembolsable = document.getElementById('editNoReembolsable').checked;
+  const comentario = document.getElementById('editComentarioTasa').value.trim();
+  
+  let nombre, monto, periodo;
+  
+  if (noReembolsable) {
+    nombre = document.getElementById('editNombreTasaNoReembolsable').value.trim();
+    monto = 0;
+    periodo = 0;
+    
+    if (!nombre) {
+      mostrarNotificacion('Ingresa el nombre de la tasa');
+      return;
+    }
+  } else {
+    nombre = document.getElementById('editNombreTasa').value.trim();
+    monto = parseFloat(document.getElementById('editMontoTasa').value);
+    periodo = parseInt(document.getElementById('editPeriodoTasa').value);
     
     if (!nombre || !monto) {
-    mostrarNotificacion('Completa todos los campos');
-    return;
+      mostrarNotificacion('Completa todos los campos');
+      return;
     }
-    
-    try {
+  }
+  
+  try {
     await updateDoc(doc(db, 'tasas', id), {
-        nombre: nombre,
-        monto: monto,
-        periodo: periodo,
-        lastModifiedBy: currentUser.email,
-        lastModifiedAt: new Date()
+      nombre: nombre,
+      monto: monto,
+      periodo: periodo,
+      noReembolsable: noReembolsable,
+      comentario: comentario || '',
+      lastModifiedBy: currentUser.email,
+      lastModifiedAt: new Date()
     });
 
     cerrarModalEditarTasa();
-    mostrarNotificacion('Tasa actualizada - cambio visible para todos ✓');
-    } catch (error) {
+    mostrarNotificacion('Tasa actualizada ✓');
+  } catch (error) {
     mostrarNotificacion('Error al actualizar tasa');
-    }
+  }
 };
 
 // PLANTILLAS
@@ -699,46 +796,107 @@ window.usarTasa = function(tasa) {
 };
 
 function renderizarTasas() {
-    const lista = document.getElementById('tasasList');
-    let tasasDelPeriodo = tasas.filter(t => t.periodo === periodoActual);
-    
-    // APLICAR FILTRO DE BÚSQUEDA
-    if (filtrosBusqueda.tasas) {
-        tasasDelPeriodo = tasasDelPeriodo.filter(t => 
-            t.nombre.toLowerCase().includes(filtrosBusqueda.tasas)
-        );
+  const lista = document.getElementById('tasasList');
+  let tasasDelPeriodo = tasas.filter(t => {
+    // Para no reembolsables, mostrar todas (no filtrar por periodo)
+    if (tipoTasaActual === 'no-reembolsable') {
+      return t.noReembolsable === true;
+    } else {
+      // Para reembolsables, filtrar por periodo
+      return !t.noReembolsable && t.periodo === periodoActual;
     }
+  });
+  
+  // APLICAR FILTRO DE BÚSQUEDA
+  if (filtrosBusqueda.tasas) {
+    tasasDelPeriodo = tasasDelPeriodo.filter(t => 
+      t.nombre.toLowerCase().includes(filtrosBusqueda.tasas)
+    );
+  }
+  
+  if (tasasDelPeriodo.length === 0) {
+    const mensajeBusqueda = filtrosBusqueda.tasas 
+      ? 'No se encontraron tasas con ese nombre' 
+      : `No hay tasas ${tipoTasaActual === 'no-reembolsable' ? 'no reembolsables' : 'reembolsables'} ${tipoTasaActual === 'reembolsable' ? `para ${periodoActual}` : ''}`;
     
-    if (tasasDelPeriodo.length === 0) {
-        const mensajeBusqueda = filtrosBusqueda.tasas 
-            ? 'No se encontraron tasas con ese nombre' 
-            : `No hay tasas para ${periodoActual}`;
-        
-        lista.innerHTML = `
-            <div class="empty-state">
-                <p>${mensajeBusqueda}</p>
-                <p style="font-size: 0.85rem; margin-top: 8px;">
-                    ${filtrosBusqueda.tasas ? 'Intenta con otros términos' : 'Agrega tasas para este año'}
-                </p>
-            </div>
-        `;
-        return;
-    }
+    lista.innerHTML = `
+      <div class="empty-state">
+        <p>${mensajeBusqueda}</p>
+        <p style="font-size: 0.85rem; margin-top: 8px;">
+          ${filtrosBusqueda.tasas ? 'Intenta con otros términos' : 'Agrega tasas'}
+        </p>
+      </div>
+    `;
+    return;
+  }
 
-    lista.innerHTML = tasasDelPeriodo.map(tasa => `
-        <div class="tasa-item">
-            <input type="checkbox" class="tasa-checkbox" ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''} onchange="toggleSeleccionTasa('${tasa.id}')">
-            <div class="tasa-info">
-                <div class="tasa-nombre">${tasa.nombre}</div>
-                <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
+  lista.innerHTML = tasasDelPeriodo.map(tasa => {
+    const tieneComentario = tasa.comentario && tasa.comentario.length > 0;
+    const comentarioCorto = tieneComentario && tasa.comentario.length > 50 
+      ? tasa.comentario.substring(0, 50) + '...' 
+      : tasa.comentario;
+    
+    // Renderizado diferente para No Reembolsables
+    if (tasa.noReembolsable) {
+      return `
+        <div class="tasa-item no-reembolsable">
+          <div class="tasa-info" style="flex: 1;">
+            <div class="tasa-nombre">
+              ${tasa.nombre}
+              <span class="badge-no-reembolsable">NO REEMBOLSABLE</span>
             </div>
-            <div class="tasa-actions">
-                <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">📄</button>
-                <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
-                <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')" title="Eliminar">🗑️</button>
-            </div>
+            ${tieneComentario ? `
+              <div class="tasa-comentario">
+                <span class="tasa-comentario-icon">💬</span>
+                ${comentarioCorto}
+                ${tasa.comentario.length > 50 ? `
+                  <button class="ver-comentario-btn" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})'>
+                    Ver más
+                  </button>
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+          <div class="tasa-actions">
+            <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
+            <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')" title="Eliminar">🗑️</button>
+          </div>
         </div>
-    `).join('');
+      `;
+    } else {
+      // Renderizado normal para Reembolsables
+      return `
+        <div class="tasa-item">
+          <input 
+            type="checkbox" 
+            class="tasa-checkbox" 
+            ${tasasSeleccionadas.has(tasa.id) ? 'checked' : ''} 
+            onchange="toggleSeleccionTasa('${tasa.id}')"
+          >
+          <div class="tasa-info">
+            <div class="tasa-nombre">${tasa.nombre}</div>
+            <div class="tasa-monto">$${tasa.monto.toFixed(2)}</div>
+            ${tieneComentario ? `
+              <div class="tasa-comentario">
+                <span class="tasa-comentario-icon">💬</span>
+                ${comentarioCorto}
+                ${tasa.comentario.length > 50 ? `
+                  <button class="ver-comentario-btn" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})'>
+                    Ver más
+                  </button>
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+          <div class="tasa-actions">
+            <button class="use-btn" onclick='usarTasa(${JSON.stringify(tasa)})' title="Copiar monto">📄</button>
+            <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
+            <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')" title="Eliminar">🗑️</button>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
 }
 
 // FUNCIÓN PARA PROCESAR RUTAS
@@ -1350,3 +1508,105 @@ function mostrarNotificacionConUndo(mensaje, undoCallback) {
     toast.innerHTML = 'Texto copiado';
   }, 5000);
 }
+
+// Funciones del modal de licencia
+window.mostrarLicencia = function() {
+  document.getElementById('licenseModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+};
+
+window.cerrarLicencia = function() {
+  document.getElementById('licenseModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+};
+
+// Cerrar con ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('licenseModal');
+    if (modal && modal.style.display === 'flex') {
+      cerrarLicencia();
+    }
+  }
+});
+
+// Cerrar al hacer click fuera del modal
+document.getElementById('licenseModal')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    cerrarLicencia();
+  }
+});
+
+// cambio de tipo de tasa
+window.cambiarTipoTasa = function(tipo) {
+  tipoTasaActual = tipo;
+  
+  // Actualizar botones
+  document.getElementById('btnReembolsable').classList.toggle('active', tipo === 'reembolsable');
+  document.getElementById('btnNoReembolsable').classList.toggle('active', tipo === 'no-reembolsable');
+  
+  // Actualizar checkbox
+  document.getElementById('noReembolsableCheckbox').checked = tipo === 'no-reembolsable';
+  
+  // Re-renderizar tasas
+  renderizarTasas();
+};
+
+window.toggleCamposTasa = function() {
+  const noReembolsable = document.getElementById('noReembolsableCheckbox').checked;
+  const camposReembolsable = document.getElementById('camposReembolsable');
+  const camposNoReembolsable = document.getElementById('camposNoReembolsable');
+  
+  if (noReembolsable) {
+    // Ocultar campos de tasa reembolsable
+    camposReembolsable.style.display = 'none';
+    camposNoReembolsable.style.display = 'grid';
+    
+    // Limpiar campos reembolsables
+    document.getElementById('nombreTasaInput').value = '';
+    document.getElementById('montoTasaInput').value = '';
+  } else {
+    // Mostrar campos de tasa reembolsable
+    camposReembolsable.style.display = 'grid';
+    camposNoReembolsable.style.display = 'none';
+    
+    // Limpiar campo no reembolsable
+    document.getElementById('nombreTasaNoReembolsableInput').value = '';
+  }
+};
+
+// ver comentarios
+window.verComentarioCompleto = function(tasa) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-comentario show';
+  modal.id = 'modalComentario';
+  modal.innerHTML = `
+    <div class="modal-comentario-content">
+      <div class="modal-comentario-header">
+        <div class="modal-comentario-title">
+          💬 Comentario: ${tasa.nombre}
+        </div>
+        <button class="modal-close-btn" onclick="cerrarModalComentario()">×</button>
+      </div>
+      <div class="modal-comentario-body">
+        ${tasa.comentario}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Cerrar al hacer click fuera
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      cerrarModalComentario();
+    }
+  });
+};
+
+window.cerrarModalComentario = function() {
+  const modal = document.getElementById('modalComentario');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
+  }
+};
