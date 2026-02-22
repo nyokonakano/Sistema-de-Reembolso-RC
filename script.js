@@ -258,7 +258,7 @@ window.agregarPeriodo = async function() {
     actualizarSelectPeriodo();
     renderizarListaPeriodos();
     input.value = '';
-    mostrarNotificacion('Año agregado - visible para todos ✓');
+    mostrarNotificacion('Año agregado correctamente ✓');
 };
 
 window.eliminarPeriodo = async function(periodo) {
@@ -290,7 +290,7 @@ return;
     actualizarSelectPeriodo();
     renderizarListaPeriodos();
     renderizarTasas();
-    mostrarNotificacion('Año eliminado - cambio visible para todos ✓');
+    mostrarNotificacion('Año eliminado correctamente ✓');
 };
 
 // TASAS
@@ -367,7 +367,7 @@ window.agregarTasa = async function() {
 window.eliminarTasa = async function(id) {
     try {
     await deleteDoc(doc(db, 'tasas', id));
-    mostrarNotificacion('Tasa eliminada - cambio visible para todos ✓');
+    mostrarNotificacion('Tasa eliminada correctamente ✓');
     } catch (error) {
     mostrarNotificacion('Error al eliminar tasa');
     }
@@ -558,7 +558,7 @@ window.agregarPlantillaPersonalizada = async function() {
 
     document.getElementById('nombrePlantillaInput').value = '';
     document.getElementById('contenidoPlantillaInput').value = '';
-    mostrarNotificacion('Plantilla agregada - visible para todos ✓');
+    mostrarNotificacion('Plantilla agregada correctamente ✓');
     cambiarTab('plantillas');
 };
 
@@ -567,7 +567,7 @@ window.eliminarPlantillaPersonalizada = async function(id) {
 
     try {
     await deleteDoc(doc(db, 'plantillas', id));
-    mostrarNotificacion('Plantilla eliminada - cambio visible para todos ✓');
+    mostrarNotificacion('Plantilla eliminada correctamente ✓');
     } catch (error) {
     mostrarNotificacion('Error al eliminar plantilla');
     }
@@ -599,7 +599,7 @@ window.guardarEdicionPlantilla = async function() {
 
     document.getElementById('nombrePlantillaInput').value = '';
     document.getElementById('contenidoPlantillaInput').value = '';
-    mostrarNotificacion('Plantilla agregada - visible para todos ✓');
+    mostrarNotificacion('Plantilla agregada correctamente ✓');
     cambiarTab('plantillas');
 };
 
@@ -648,7 +648,7 @@ window.agregarTipo = async function() {
     actualizarSelectTipos();
     renderizarListaTipos();
     input.value = '';
-    mostrarNotificacion('Tipo agregado - visible para todos ✓');
+    mostrarNotificacion('Tipo agregado correctamente ✓');
 };
 
 window.eliminarTipo = async function(tipo) {
@@ -667,7 +667,7 @@ window.eliminarTipo = async function(tipo) {
     
     actualizarSelectTipos();
     renderizarListaTipos();
-    mostrarNotificacion('Tipo eliminado - cambio visible para todos ✓');
+    mostrarNotificacion('Tipo eliminado correctamente ✓');
 };
 
 // FUNCIONES DE FILTRADO
@@ -1541,15 +1541,38 @@ document.getElementById('licenseModal')?.addEventListener('click', function(e) {
 window.cambiarTipoTasa = function(tipo) {
   tipoTasaActual = tipo;
   
-  // Actualizar botones
-  document.getElementById('btnReembolsable').classList.toggle('active', tipo === 'reembolsable');
-  document.getElementById('btnNoReembolsable').classList.toggle('active', tipo === 'no-reembolsable');
+  // Actiualizar botones
+  const btReembolsable = document.getElementById('btnReembolsable');
+  const btNoReembolsable = document.getElementById('btnNoReembolsable');
+
+  btReembolsable.classList.remove('active');
+  btNoReembolsable.classList.remove('active');
   
-  // Actualizar checkbox
-  document.getElementById('noReembolsableCheckbox').checked = tipo === 'no-reembolsable';
-  
-  // Re-renderizar tasas
+  if (tipo === 'reembolsable') {
+    btReembolsable.classList.add('active');
+  } else {
+    btNoReembolsable.classList.add('active');
+  }
+
+  //renderizxar tasas
   renderizarTasas();
+};
+
+// Validar que Ruta solo tenga letras, guiones, espacios, barras
+window.validarRutaSoloTexto = function(input) {
+  let valor = input.value;
+  
+  // Permitir solo letras (A-Z, a-z), guiones (-), espacios, barras (/)
+  // Eliminar cualquier número o carácter especial
+  valor = valor.replace(/[^A-Za-z\s\-\/]/g, '');
+  
+  // Convertir a mayúsculas automáticamente
+  valor = valor.toUpperCase();
+  
+  input.value = valor;
+  
+  // Renderizar plantillas
+  renderizarTodasLasPlantillas();
 };
 
 window.toggleCamposTasa = function() {
@@ -1610,3 +1633,198 @@ window.cerrarModalComentario = function() {
     setTimeout(() => modal.remove(), 300);
   }
 };
+
+// Variables para calculadora
+let contadorGruposCalc = 0;
+
+// Agregar nuevo grupo
+window.agregarGrupoCalc = function() {
+  contadorGruposCalc++;
+  const container = document.getElementById('gruposTasasCalc');
+  
+  const nuevoGrupo = document.createElement('div');
+  nuevoGrupo.className = 'calc-grupo';
+  nuevoGrupo.setAttribute('data-grupo-calc', contadorGruposCalc);
+  nuevoGrupo.innerHTML = `
+    <div class="calc-grupo-header">
+      <span class="calc-grupo-numero">Grupo ${contadorGruposCalc + 1}</span>
+      <button class="calc-btn-delete" onclick="eliminarGrupoCalc(${contadorGruposCalc})">
+        ×
+      </button>
+    </div>
+    <textarea 
+      class="calc-textarea" 
+      id="calcGrupo${contadorGruposCalc}" 
+      placeholder="Ingresa montos (uno por línea o separados por espacios)"
+      rows="6"
+      oninput="calcularTotales()"
+    ></textarea>
+    <div class="calc-subtotal-panel">
+      <div class="calc-subtotal-row">
+        <span style="color: #4a5568; font-weight: 500;">Total:</span>
+        <span class="calc-subtotal-monto" id="calcSubtotal${contadorGruposCalc}">$0.00</span>
+      </div>
+      <button class="calc-btn-copy-individual" onclick="copiarSubtotalCalc(${contadorGruposCalc})">
+        Copiar
+      </button>
+    </div>
+  `;
+  
+  container.appendChild(nuevoGrupo);
+  
+  // Mostrar botón eliminar en primer grupo si hay más de uno
+  actualizarBotonesEliminar();
+  
+  // Focus en el nuevo textarea
+  document.getElementById(`calcGrupo${contadorGruposCalc}`).focus();
+};
+
+// Eliminar grupo
+window.eliminarGrupoCalc = function(grupoId) {
+  const grupo = document.querySelector(`[data-grupo-calc="${grupoId}"]`);
+  if (grupo) {
+    grupo.classList.add('removing');
+    setTimeout(() => {
+      grupo.remove();
+      calcularTotales();
+      renumerarGruposCalc();
+      actualizarBotonesEliminar();
+    }, 300);
+  }
+};
+
+// Renumerar grupos
+function renumerarGruposCalc() {
+  const grupos = document.querySelectorAll('.calc-grupo');
+  grupos.forEach((grupo, index) => {
+    const titulo = grupo.querySelector('.calc-grupo-numero');
+    if (titulo) titulo.textContent = `Grupo ${index + 1}`;
+  });
+}
+
+// Actualizar visibilidad de botones eliminar
+function actualizarBotonesEliminar() {
+  const grupos = document.querySelectorAll('.calc-grupo');
+  const botones = document.querySelectorAll('.calc-btn-delete');
+  
+  if (grupos.length === 1) {
+    botones.forEach(btn => btn.style.display = 'none');
+  } else {
+    botones.forEach(btn => btn.style.display = 'flex');
+  }
+}
+
+// Calcular totales
+window.calcularTotales = function() {
+  const grupos = document.querySelectorAll('.calc-grupo');
+  let totalGeneral = 0;
+  
+  grupos.forEach(grupo => {
+    const grupoId = grupo.getAttribute('data-grupo-calc');
+    const textarea = document.getElementById(`calcGrupo${grupoId}`);
+    const subtotalElement = document.getElementById(`calcSubtotal${grupoId}`);
+    
+    if (textarea && subtotalElement) {
+      const texto = textarea.value;
+      
+      // Extraer números (incluyendo decimales)
+      const numeros = texto.match(/\d+\.?\d*/g);
+      
+      let subtotal = 0;
+      if (numeros) {
+        numeros.forEach(num => {
+          const valor = parseFloat(num);
+          if (!isNaN(valor)) {
+            subtotal += valor;
+          }
+        });
+      }
+      
+      subtotalElement.textContent = '$' + subtotal.toFixed(2);
+      totalGeneral += subtotal;
+    }
+  });
+  
+  // Actualizar total general (solo informativo)
+  const totalElement = document.getElementById('calcTotalGeneral');
+  if (totalElement) {
+    totalElement.textContent = '$' + totalGeneral.toFixed(2);
+  }
+};
+
+// Copiar subtotal de un grupo específico
+window.copiarSubtotalCalc = function(grupoId) {
+  const subtotalElement = document.getElementById(`calcSubtotal${grupoId}`);
+  if (subtotalElement) {
+    const subtotal = subtotalElement.textContent.replace('$', '');
+    copiarTexto(subtotal);
+    
+    // Feedback visual en el botón
+    const btn = event.target;
+    const textoOriginal = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.style.background = '#38a169';
+    
+    setTimeout(() => {
+      btn.textContent = textoOriginal;
+      btn.style.background = '#3182ce';
+    }, 1500);
+    
+    mostrarNotificacion(`💰 Total del Grupo ${parseInt(grupoId) + 1} copiado: $${subtotal}`);
+  }
+};
+
+// Calcular PapaEcho (PE)
+window.calcularPE = function() {
+  // Obtener valores
+  const fareInput = document.getElementById('peFare').value;
+  const yrInput = document.getElementById('peYR').value;
+  const igvInput = document.getElementById('peIGV').value;
+  
+  const fare = parseFloat(fareInput) || 0;
+  const yr = parseFloat(yrInput) || 0;
+  const igvPercent = parseFloat(igvInput) || 18;
+  
+  // Calcular
+  const subtotal = fare + yr;
+  const igvMonto = subtotal * (igvPercent / 100);
+  const pe = igvMonto;
+  
+  // Actualizar breakdown
+  document.getElementById('peBreakdownFare').textContent = '$' + fare.toFixed(2);
+  document.getElementById('peBreakdownYR').textContent = '$' + yr.toFixed(2);
+  document.getElementById('peBreakdownSubtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('peBreakdownIGVPercent').textContent = igvPercent.toFixed(2);
+  document.getElementById('peBreakdownIGV').textContent = '$' + igvMonto.toFixed(2);
+  
+  // Actualizar resultado
+  document.getElementById('peResultado').textContent = '$' + pe.toFixed(2);
+};
+
+// Copiar resultado PE
+window.copiarPE = function() {
+  const resultado = document.getElementById('peResultado').textContent.replace('$', '');
+  copiarTexto(resultado);
+  
+  // Feedback visual
+  const btn = event.target;
+  const textoOriginal = btn.textContent;
+  btn.textContent = '✓ Copiado';
+  btn.style.background = 'rgba(56, 161, 105, 0.5)';
+  
+  setTimeout(() => {
+    btn.textContent = textoOriginal;
+    btn.style.background = 'rgba(255, 255, 255, 0.2)';
+  }, 1500);
+  
+  mostrarNotificacion('📊 PapaEcho copiado: $' + resultado);
+};
+
+// Inicializar PE con valores por defecto
+document.addEventListener('DOMContentLoaded', function() {
+  // Si el elemento existe, inicializar
+  const peIGV = document.getElementById('peIGV');
+  if (peIGV) {
+    calcularPE();
+  }
+});

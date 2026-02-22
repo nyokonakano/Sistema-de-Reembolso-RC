@@ -40,9 +40,10 @@
     </div>
 
     <div class="tabs">
-      <button class="tab active" onclick="cambiarTab('plantillas')" title="Plantillas">Plantillas</button>
-      <button class="tab" onclick="cambiarTab('tasas')" title="Tasas">Tasas</button>
-      <button class="tab" onclick="cambiarTab('crear')" title="Crear Plantilla">Crear Plantilla</button>
+      <button class="tab active" onclick="cambiarTab('plantillas')">Plantillas</button>
+      <button class="tab" onclick="cambiarTab('tasas')">Tasas</button>
+      <button class="tab" onclick="cambiarTab('calculadora')">Calculadora</button>
+      <button class="tab" onclick="cambiarTab('crear')">Crear Plantilla</button>
     </div>
 
     <div class="main-grid">
@@ -66,6 +67,7 @@
                   placeholder="Ej: LIM-MIA // MIA-LIM // CUN-LIM"
                   value=""
                   title="Ruta de Vuelo"
+                  oninput="validarRutaSoloTexto(this)"
                   
                 >
                 <div id="rutaPreview" style="font-size: 0.75rem; color: #718096; margin-top: 4px; min-height: 16px; padding: 4px 8px; background: #f7fafc; border-radius: 4px; display: none;"></div>
@@ -276,6 +278,158 @@
             <div class="empty-state">
               <p>No hay tasas guardadas para este período</p>
               <p style="font-size: 0.85rem; margin-top: 8px;">Agrega tasas para usarlas rápidamente</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Calculadora -->
+      <div id="tab-calculadora" class="tab-content">
+        <div class="tasas-panel" style="max-width: 800px;">
+          <div class="tasas-header">
+            <div class="controls-title" style="margin: 0;">
+              Calculadora de Tasas
+            </div>
+          </div>
+
+          <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
+            <p style="color: #718096; font-size: 0.9rem; margin: 0; text-align: center;">
+              Ingresar taxas a calcular
+            </p>
+          </div>
+
+          <div id="gruposTasasCalc">
+            <!-- Grupo inicial -->
+            <div class="calc-grupo" data-grupo-calc="0">
+              <div class="calc-grupo-header">
+                <span class="calc-grupo-numero">Grupo 1</span>
+                <button class="calc-btn-delete" onclick="eliminarGrupoCalc(0)" style="display: none;">
+                  ×
+                </button>
+              </div>
+              <textarea 
+                class="calc-textarea" 
+                id="calcGrupo0" 
+                placeholder="Ingresa las taxas a calcular"
+                oninput="calcularTotales()"
+              ></textarea>
+              <div class="calc-subtotal-panel">
+                <div class="calc-subtotal-row">
+                  <span style="color: #4a5568; font-weight: 500;">Total:</span>
+                  <span class="calc-subtotal-monto" id="calcSubtotal0">$0.00</span>
+                </div>
+                <button class="calc-btn-copy-individual" onclick="copiarSubtotalCalc(0)">
+                  Copiar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button class="calc-btn-add" onclick="agregarGrupoCalc()">
+            + Agregar Grupo
+          </button>
+
+          <!-- CALCULADOR DE PAPA ECHO (PE) -->
+          <div class="pe-calculator">
+            <div class="pe-header">
+              <h3>Calculador PapaEcho (PE)</h3>
+            </div>
+            
+            <div class="pe-body">
+              <!--<div class="pe-formula">
+                <span>Fórmula:</span>
+                <code>(Fare + YR) × IGV (18%)</code>
+              </div>-->
+
+              <div class="pe-inputs">
+                <div class="pe-input-group">
+                  <label class="pe-label">Fare</label>
+                  <div class="pe-input-wrapper">
+                    <span class="pe-currency">$</span>
+                    <input 
+                      type="number" 
+                      id="peFare" 
+                      class="pe-input" 
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      oninput="calcularPE()"
+                      title="Monto del Fare"
+                    >
+                  </div>
+                </div>
+
+                <div class="pe-input-group">
+                  <label class="pe-label">
+                    Yankee Romeo (YR)
+                  </label>
+                  <div class="pe-input-wrapper">
+                    <span class="pe-currency">$</span>
+                    <input 
+                      type="number" 
+                      id="peYR" 
+                      class="pe-input" 
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      oninput="calcularPE()"
+                      title="Monto del Yankee Romeo (YR)"
+                    >
+                  </div>
+                </div>
+
+                <div class="pe-input-group">
+                  <label class="pe-label">IGV</label>
+                  <div class="pe-input-wrapper">
+                    <input 
+                      type="number" 
+                      id="peIGV" 
+                      class="pe-input-percent" 
+                      value="18"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      oninput="calcularPE()"
+                      title="Porcentaje del IGV"
+                    >
+                    <span class="pe-percent">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pe-breakdown">
+                <div class="pe-breakdown-row">
+                  <span>Fare:</span>
+                  <span id="peBreakdownFare">$0.00</span>
+                </div>
+                <div class="pe-breakdown-row">
+                  <span>+ YR:</span>
+                  <span id="peBreakdownYR">$0.00</span>
+                </div>
+                <div class="pe-breakdown-row pe-subtotal">
+                  <span>Subtotal:</span>
+                  <span id="peBreakdownSubtotal">$0.00</span>
+                </div>
+                <div class="pe-breakdown-row">
+                  <span>× IGV (<span id="peBreakdownIGVPercent">18</span>%):</span>
+                  <span id="peBreakdownIGV">$0.00</span>
+                </div>
+              </div>
+
+              <div class="pe-result">
+                <div class="pe-result-value" id="peResultado">$0.00</div>
+                <button class="pe-btn-copy" onclick="copiarPE()" title="Copiar Resultado del PE">
+                  Copiar PE
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel de total general (opcional, solo informativo) -->
+          <div class="calc-total-panel-info">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.9rem; color: #718096;">Total de todos los grupos:</span>
+              <span class="calc-total-general" id="calcTotalGeneral">$0.00</span>
             </div>
           </div>
         </div>

@@ -72,8 +72,16 @@ class TutorialInteractivo {
         descripcion: 'Aquí puedes cambiar entre años y agregar nuevos períodos fiscales. Cada año tiene sus propias tasas independientes.',
         posicion: 'bottom'
       },
+
       {
         elemento: '.tab:nth-child(3)',
+        titulo: 'Calculadora de Tasas 🧮',
+        descripcion: 'Usa esta herramienta para sumar múltiples grupos de tasas. Puedes crear varios grupos independientes y calcular el total general.',
+        posicion: 'bottom'
+      },
+
+      {
+        elemento: '.tab:nth-child(4)',
         titulo: 'Crear Plantillas Personalizadas ✨',
         descripcion: 'Haz clic aquí para crear tus propias plantillas personalizadas con variables dinámicas.',
         posicion: 'bottom',
