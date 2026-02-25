@@ -496,14 +496,14 @@
 
   <!-- Modals -->
    <!--Licencia -->
-<div id="licenseModal" class="modal-license" style="display: none;">
-  <div class="modal-license-content">
-    <div class="modal-license-header">
-      <h2>Licencia MIT</h2>
-      <button class="modal-close-btn" onclick="cerrarLicencia()">×</button>
-    </div>
-    <div class="modal-license-body">
-      <pre>MIT License
+  <div id="licenseModal" class="modal-license" style="display: none;">
+    <div class="modal-license-content">
+      <div class="modal-license-header">
+        <h2>Licencia MIT</h2>
+        <button class="modal-close-btn" onclick="cerrarLicencia()">×</button>
+      </div>
+      <div class="modal-license-body">
+        <pre>MIT License
 
 Copyright (c) 2025 Continental Travel Service
 
@@ -525,37 +525,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.</pre>
 
-      <!--<div class="license-section">
-        <h3>Dependencias de Terceros</h3>
-        <ul>
-          <li><strong>Firebase</strong> - Copyright © Google LLC - Apache License 2.0</li>
-          <li><strong>Google Fonts</strong> - SIL Open Font License 1.1</li>
-        </ul>
-      </div>
+        <!--<div class="license-section">
+          <h3>Dependencias de Terceros</h3>
+          <ul>
+            <li><strong>Firebase</strong> - Copyright © Google LLC - Apache License 2.0</li>
+            <li><strong>Google Fonts</strong> - SIL Open Font License 1.1</li>
+          </ul>
+        </div>
 
-      <div class="license-section">
-        <h3>Términos de Uso</h3>
-        <ul>
-          <li>Este sistema es de uso interno exclusivo de Continental Travel Service</li>
-          <li>Los datos procesados son confidenciales y propiedad de la empresa</li>
-          <li>Prohibida la redistribución sin autorización expresa</li>
-          <li>El código fuente está disponible bajo licencia MIT para el equipo de desarrollo</li>
-        </ul>
-      </div>-->
+        <div class="license-section">
+          <h3>Términos de Uso</h3>
+          <ul>
+            <li>Este sistema es de uso interno exclusivo de Continental Travel Service</li>
+            <li>Los datos procesados son confidenciales y propiedad de la empresa</li>
+            <li>Prohibida la redistribución sin autorización expresa</li>
+            <li>El código fuente está disponible bajo licencia MIT para el equipo de desarrollo</li>
+          </ul>
+        </div>-->
 
-      <div class="license-section">
-        <h3>Contacto</h3>
-        <p>
-          Para consultas sobre el desarrollo:<br>
-          <a href="mailto:jack.theripe@outlook.com">jack.theripe@outlook.com</a>
-        </p>
+        <div class="license-section">
+          <h3>Contacto</h3>
+          <p>
+            Para consultas sobre el desarrollo:<br>
+            <a href="mailto:jack.theripe@outlook.com">jack.theripe@outlook.com</a>
+          </p>
+        </div>
       </div>
-    </div>
-    <div class="modal-license-footer">
-      <button class="btn-primary" onclick="cerrarLicencia()">Aceptar</button>
+      <div class="modal-license-footer">
+        <button class="btn-primary" onclick="cerrarLicencia()">Aceptar</button>
+      </div>
     </div>
   </div>
-</div>
 
   <div class="modal" id="modalTipos">
     <div class="modal-content">
@@ -647,6 +647,71 @@ SOFTWARE.</pre>
       </div>
     </div>
   </footer>
+
+  <!--Botón flotante de comentarios-->
+  <button class="feedback-btn" onclick="abrirModalFeedback()" title="Enviar Feedback" style="background: #679dca; border-color: transparent; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+    💬
+  </button>
+
+  <!--Modal de comnetarios-->
+  <div class="modal" id="modalFeedback">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">💬 Enviar Comentarios o Sugerencias</div>
+        <button class="modal-close" onclick="cerrarModalFeedback()" title="Cerrar Ventana">×</button>
+      </div>
+      <div class="feedback-body">
+        <p style="color: #718096; font-size: 0.9rem; margin-bottom: 16px;">
+          Tus comentarios son muy importantes para mejorar el sistema. El desarrollador recibirá tu mensaje directamente.
+        </p>
+
+        <div class="form-row" style="grid-template-columns: 1fr;">
+          <label class="control-label">Usuario</label>
+          <input 
+            type="email" 
+            id="feedbackEmail" 
+            class="form-input" 
+            placeholder="tu@email.com"
+          >
+        </div>
+
+        <div class="form-row" style="grid-template-columns: 1fr; margin-top: 12px;">
+          <label class="control-label">Tipo de comentario</label>
+          <select id="feedbackTipo" class="form-input">
+            <option value="sugerencia">Sugerencia</option>
+            <option value="bug">Reportar Error</option>
+            <option value="pregunta">Pregunta</option>
+            <option value="felicitacion">Felicitación</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="form-row" style="grid-template-columns: 1fr; margin-top: 12px;">
+          <label class="control-label">Tu comentario</label>
+          <textarea 
+            id="feedbackMensaje" 
+            class="form-input" 
+            placeholder="Escribe aquí tu comentario, sugerencia o reporte..."
+            rows="6"
+            style="resize: vertical; font-family: inherit;"
+          ></textarea>
+        </div>
+
+        <div class="form-row" style="grid-template-columns: 1fr; margin-top: 12px;">
+          <label class="checkbox-label-tasa">
+            <input type="checkbox" id="feedbackIncluirInfo">
+            <span>Incluir información técnica (navegador, fecha, usuario)</span>
+          </label>
+        </div>
+
+        <div id="feedbackStatus" class="feedback-status" style="display: none;"></div>
+
+        <button class="add-btn" onclick="enviarFeedback()" id="btnEnviarFeedback">
+          📤 Enviar Comentario
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Firebase SDKs -->
   <script type="module" src="script.js"></script>

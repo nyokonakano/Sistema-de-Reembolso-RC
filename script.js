@@ -1416,16 +1416,35 @@ function limpiarTodosCampos() {
     fecha: document.getElementById('fechaInput').value,
     numeroRI: document.getElementById('numeroRIInput').value,
     searchPlantillas: document.getElementById('searchPlantillas').value,
-    searchTasas: document.getElementById('searchTasas').value
+    searchTasas: document.getElementById('searchTasas').value,
+    // Guardar calculadora
+    calculadoraGrupos: [],
+    // Guardar PE
+    peFare: document.getElementById('peFare')?.value || '',
+    peYR: document.getElementById('peYR')?.value || '',
+    peIGV: document.getElementById('peIGV')?.value || ''
   };
   
-  // Crear overlay de limpieza (versión rápida)
+  // Guardar grupos de calculadora
+  const grupos = document.querySelectorAll('.calc-grupo');
+  grupos.forEach(grupo => {
+    const id = grupo.getAttribute('data-grupo-calc');
+    const textarea = document.getElementById(`calcGrupo${id}`);
+    if (textarea) {
+      camposGuardados.calculadoraGrupos.push({
+        id: id,
+        valor: textarea.value
+      });
+    }
+  });
+  
+  // Crear overlay de limpieza
   const overlay = document.createElement('div');
   overlay.className = 'cleaning-overlay';
   overlay.innerHTML = `
     <div class="cleaning-content-fast">
       <div class="cleaning-icon-fast">🧹</div>
-      <div class="cleaning-text-fast">Limpiando campos...</div>
+      <div class="cleaning-text-fast">Limpiando todo el sistema...</div>
       <div class="cleaning-progress-fast">
         <div class="cleaning-bar-fast" id="cleaningBarFast"></div>
       </div>
@@ -1436,7 +1455,7 @@ function limpiarTodosCampos() {
   // Animar aparición del overlay
   setTimeout(() => overlay.classList.add('active'), 10);
   
-  // Array de campos
+  // Array de campos principales
   const campos = ['rutaInput', 'fechaInput', 'numeroRIInput', 'searchPlantillas', 'searchTasas'];
   
   // Progreso animado
@@ -1448,7 +1467,7 @@ function limpiarTodosCampos() {
     if (progreso >= 100) clearInterval(progressInterval);
   }, 30);
   
-  // Limpiar todos los campos rápidamente con efecto visual
+  // Limpiar campos principales
   campos.forEach((id, index) => {
     setTimeout(() => {
       const elemento = document.getElementById(id);
@@ -1461,12 +1480,53 @@ function limpiarTodosCampos() {
           elemento.dispatchEvent(new Event('input', { bubbles: true }));
         }, 100);
       }
-    }, index * 150); // 150ms entre campos = 750ms total
+    }, index * 100);
   });
+  
+  // Limpiar calculadora (todos los grupos)
+  setTimeout(() => {
+    const gruposCalc = document.querySelectorAll('.calc-grupo');
+    gruposCalc.forEach((grupo, index) => {
+      const id = grupo.getAttribute('data-grupo-calc');
+      const textarea = document.getElementById(`calcGrupo${id}`);
+      if (textarea) {
+        setTimeout(() => {
+          textarea.classList.add('clearing-flash');
+          setTimeout(() => {
+            textarea.value = '';
+            textarea.classList.remove('clearing-flash');
+            calcularTotales();
+          }, 100);
+        }, index * 80);
+      }
+    });
+  }, campos.length * 100 + 200);
+  
+  // Limpiar campos PE
+  setTimeout(() => {
+    const camposPE = ['peFare', 'peYR', 'peIGV'];
+    camposPE.forEach((id, index) => {
+      const elemento = document.getElementById(id);
+      if (elemento) {
+        setTimeout(() => {
+          elemento.classList.add('clearing-flash');
+          setTimeout(() => {
+            if (id === 'peIGV') {
+              elemento.value = '18'; // Resetear IGV a 18%
+            } else {
+              elemento.value = '';
+            }
+            elemento.classList.remove('clearing-flash');
+            if (typeof calcularPE === 'function') calcularPE();
+          }, 100);
+        }, index * 80);
+      }
+    });
+  }, campos.length * 100 + 400);
   
   // Generar CE2 y cerrar
   setTimeout(() => {
-    document.querySelector('.cleaning-text-fast').textContent = '✓ Listo!';
+    document.querySelector('.cleaning-text-fast').textContent = '✓ ¡Todo limpio!';
     document.querySelector('.cleaning-icon-fast').textContent = '✓';
     
     generarCE2();
@@ -1475,10 +1535,48 @@ function limpiarTodosCampos() {
       overlay.classList.remove('active');
       setTimeout(() => {
         overlay.remove();
-        mostrarNotificacionConUndo('🧹 Campos limpiados', deshacerLimpieza);
+        mostrarNotificacionConUndo('🧹 Todo el sistema limpiado', deshacerLimpiezaCompleta);
       }, 200);
     }, 400);
-  }, 1000);
+  }, 1500);
+}
+
+// Deshacer limpieza completa (incluyendo calculadora y PE)
+function deshacerLimpiezaCompleta() {
+  // Restaurar campos principales
+  document.getElementById('rutaInput').value = camposGuardados.ruta;
+  document.getElementById('fechaInput').value = camposGuardados.fecha;
+  document.getElementById('numeroRIInput').value = camposGuardados.numeroRI;
+  document.getElementById('searchPlantillas').value = camposGuardados.searchPlantillas;
+  document.getElementById('searchTasas').value = camposGuardados.searchTasas;
+  
+  // Restaurar calculadora
+  if (camposGuardados.calculadoraGrupos) {
+    camposGuardados.calculadoraGrupos.forEach(grupo => {
+      const textarea = document.getElementById(`calcGrupo${grupo.id}`);
+      if (textarea) {
+        textarea.value = grupo.valor;
+      }
+    });
+    if (typeof calcularTotales === 'function') calcularTotales();
+  }
+  
+  // Restaurar PE
+  const peFare = document.getElementById('peFare');
+  const peYR = document.getElementById('peYR');
+  const peIGV = document.getElementById('peIGV');
+  
+  if (peFare) peFare.value = camposGuardados.peFare;
+  if (peYR) peYR.value = camposGuardados.peYR;
+  if (peIGV) peIGV.value = camposGuardados.peIGV;
+  
+  if (typeof calcularPE === 'function') calcularPE();
+  
+  // Re-renderizar
+  renderizarTodasLasPlantillas();
+  filtrarTasas();
+  
+  mostrarNotificacion('↩️ Todo restaurado');
 }
 
 function deshacerLimpieza() {
@@ -1828,3 +1926,143 @@ document.addEventListener('DOMContentLoaded', function() {
     calcularPE();
   }
 });
+
+// Sistema de Feedback/Comentarios
+window.abrirModalFeedback = function() {
+  document.getElementById('modalFeedback').classList.add('show');
+  
+  // Auto-llenar email del usuario actual si está disponible
+  if (window.currentUser && window.currentUser.email) {
+    document.getElementById('feedbackEmail').value = window.currentUser.email;
+  }
+};
+
+window.cerrarModalFeedback = function() {
+  document.getElementById('modalFeedback').classList.remove('show');
+  
+  // Limpiar campos
+  document.getElementById('feedbackEmail').value = '';
+  document.getElementById('feedbackMensaje').value = '';
+  document.getElementById('feedbackTipo').value = 'sugerencia';
+  document.getElementById('feedbackIncluirInfo').checked = false;
+  
+  // Ocultar status
+  const status = document.getElementById('feedbackStatus');
+  status.style.display = 'none';
+  status.className = 'feedback-status';
+};
+
+window.enviarFeedback = async function() {
+  const email = document.getElementById('feedbackEmail').value.trim();
+  const tipo = document.getElementById('feedbackTipo').value;
+  const mensaje = document.getElementById('feedbackMensaje').value.trim();
+  const incluirInfo = document.getElementById('feedbackIncluirInfo').checked;
+  const status = document.getElementById('feedbackStatus');
+  const btn = document.getElementById('btnEnviarFeedback');
+  
+  // Validar
+  if (!mensaje) {
+    mostrarFeedbackStatus('Por favor escribe un comentario', 'error');
+    return;
+  }
+  
+  // Preparar información técnica
+  let infoTecnica = '';
+  if (incluirInfo) {
+    const userAgent = navigator.userAgent;
+    const navegador = obtenerNombreNavegador();
+    const fecha = new Date().toLocaleString('es-PE');
+    const usuario = window.currentUser ? window.currentUser.email : 'Anónimo';
+    
+    infoTecnica = `
+
+───────────────────────────
+INFORMACIÓN TÉCNICA:
+───────────────────────────
+Usuario: ${usuario}
+Fecha: ${fecha}
+Navegador: ${navegador}
+User Agent: ${userAgent}
+URL: ${window.location.href}
+`;
+  }
+  
+  // Construir mensaje completo
+  const tipoEmoji = {
+    'sugerencia': '💡',
+    'bug': '🐛',
+    'pregunta': '❓',
+    'felicitacion': '⭐',
+    'otro': '📝'
+  };
+  
+  const asunto = `${tipoEmoji[tipo]} ${tipo.toUpperCase()} - Sistema Reembolsos RC`;
+  const cuerpoCompleto = `
+TIPO: ${tipo.toUpperCase()}
+${email ? `EMAIL DE CONTACTO: ${email}` : 'EMAIL: No proporcionado'}
+
+COMENTARIO:
+${mensaje}
+${infoTecnica}
+`;
+  
+  // Mostrar loading
+  mostrarFeedbackStatus('📤 Enviando comentario...', 'loading');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  
+  try {
+    // Guardar en Firebase para respaldo
+    await addDoc(collection(db, 'feedback'), {
+      email: email || 'anónimo',
+      tipo: tipo,
+      mensaje: mensaje,
+      infoTecnica: incluirInfo ? infoTecnica : null,
+      usuario: window.currentUser ? window.currentUser.email : 'anónimo',
+      fecha: new Date(),
+      leido: false
+    });
+    
+    // Enviar email usando mailto (alternativa si no tienes backend)
+    const mailtoLink = `mailto:jack.theripe@outlook.com?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpoCompleto)}`;
+    
+    // Abrir cliente de email
+    window.location.href = mailtoLink;
+    
+    // Esperar un momento para que se abra el cliente
+    setTimeout(() => {
+      mostrarFeedbackStatus('✅ ¡Gracias! Tu comentario se ha registrado. Se abrió tu cliente de email para enviarlo.', 'success');
+      btn.disabled = false;
+      btn.textContent = '📤 Enviar Comentario';
+      
+      // Cerrar modal después de 3 segundos
+      setTimeout(() => {
+        cerrarModalFeedback();
+        mostrarNotificacion('Gracias por tu feedback 💚');
+      }, 3000);
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Error al enviar feedback:', error);
+    mostrarFeedbackStatus('❌ Error al enviar. Por favor intenta de nuevo.', 'error');
+    btn.disabled = false;
+    btn.textContent = '📤 Enviar Comentario';
+  }
+};
+
+function mostrarFeedbackStatus(mensaje, tipo) {
+  const status = document.getElementById('feedbackStatus');
+  status.textContent = mensaje;
+  status.className = `feedback-status ${tipo}`;
+  status.style.display = 'block';
+}
+
+function obtenerNombreNavegador() {
+  const ua = navigator.userAgent;
+  if (ua.indexOf('Firefox') > -1) return 'Firefox';
+  if (ua.indexOf('Chrome') > -1) return 'Chrome';
+  if (ua.indexOf('Safari') > -1) return 'Safari';
+  if (ua.indexOf('Edge') > -1) return 'Edge';
+  if (ua.indexOf('MSIE') > -1 || ua.indexOf('Trident/') > -1) return 'Internet Explorer';
+  return 'Desconocido';
+}
