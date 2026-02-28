@@ -30,6 +30,22 @@ let tiposPlantilla = [];
 let plantillaEnEdicion = null;
 let periodos = [2024];
 let periodoActual = 2024;
+
+// ════════════════════════════════════════════════════
+// CONFIGURACIÓN DE EMAILJS
+// ════════════════════════════════════════════════════
+
+const EMAILJS_PUBLIC_KEY = "GfmZx1aPP8OsPet2s";
+const EMAILJS_SERVICE_ID = "service_m69ttdv";
+const EMAILJS_TEMPLATE_ID = "template_3gkkotm";
+
+// Inicializar EmailJS
+(function() {
+  emailjs.init({
+    publicKey: EMAILJS_PUBLIC_KEY,
+  });
+})();
+
 //VARIABLES PARA FILTROS
 let filtrosBusqueda = {
     plantillas: '',
@@ -1966,10 +1982,14 @@ window.enviarFeedback = async function() {
     return;
   }
   
+  if (mensaje.length < 10) {
+    mostrarFeedbackStatus('El comentario debe tener al menos 10 caracteres', 'error');
+    return;
+  }
+  
   // Preparar información técnica
   let infoTecnica = '';
   if (incluirInfo) {
-    const userAgent = navigator.userAgent;
     const navegador = obtenerNombreNavegador();
     const fecha = new Date().toLocaleString('es-PE');
     const usuario = window.currentUser ? window.currentUser.email : 'Anónimo';
@@ -1982,12 +2002,14 @@ INFORMACIÓN TÉCNICA:
 Usuario: ${usuario}
 Fecha: ${fecha}
 Navegador: ${navegador}
-User Agent: ${userAgent}
+User Agent: ${navigator.userAgent}
 URL: ${window.location.href}
+Resolución: ${window.screen.width}x${window.screen.height}
+Idioma: ${navigator.language}
 `;
   }
   
-  // Construir mensaje completo
+  // Emoji según tipo
   const tipoEmoji = {
     'sugerencia': '💡',
     'bug': '🐛',
@@ -1996,15 +2018,7 @@ URL: ${window.location.href}
     'otro': '📝'
   };
   
-  const asunto = `${tipoEmoji[tipo]} ${tipo.toUpperCase()} - Sistema Reembolsos RC`;
-  const cuerpoCompleto = `
-TIPO: ${tipo.toUpperCase()}
-${email ? `EMAIL DE CONTACTO: ${email}` : 'EMAIL: No proporcionado'}
-
-COMENTARIO:
-${mensaje}
-${infoTecnica}
-`;
+  const emoji = tipoEmoji[tipo] || '📝';
   
   // Mostrar loading
   mostrarFeedbackStatus('📤 Enviando comentario...', 'loading');
@@ -2012,41 +2026,92 @@ ${infoTecnica}
   btn.textContent = 'Enviando...';
   
   try {
-    // Guardar en Firebase para respaldo
-    await addDoc(collection(db, 'feedback'), {
+    // 1. Guardar en Firebase para respaldo
+    const docRef = await addDoc(collection(db, 'feedback'), {
       email: email || 'anónimo',
       tipo: tipo,
       mensaje: mensaje,
       infoTecnica: incluirInfo ? infoTecnica : null,
       usuario: window.currentUser ? window.currentUser.email : 'anónimo',
       fecha: new Date(),
+      enviado: false,
       leido: false
     });
     
-    // Enviar email usando mailto (alternativa si no tienes backend)
-    const mailtoLink = `mailto:jack.theripe@outlook.com?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpoCompleto)}`;
+    // 2. Preparar parámetros para EmailJS
+    const templateParams = {
+      to_email: 'jack.theripe@outlook.com',
+      from_email: email || 'usuario.anonimo@sistema.com',
+      tipo: `${emoji} ${tipo.toUpperCase()}`,
+      mensaje: mensaje,
+      info_tecnica: infoTecnica || 'No incluida',
+      usuario: window.currentUser ? window.currentUser.email : 'Anónimo',
+      fecha: new Date().toLocaleString('es-PE', { 
+        dateStyle: 'full', 
+        timeStyle: 'medium' 
+      })
+    };
     
-    // Abrir cliente de email
-    window.location.href = mailtoLink;
+    // 3. Enviar email con EmailJS
+    const response = await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      templateParams
+    );
     
-    // Esperar un momento para que se abra el cliente
+    console.log('Email enviado:', response.status, response.text);
+    
+    // 4. Actualizar documento como enviado
+    await updateDoc(doc(db, 'feedback', docRef.id), {
+      enviado: true,
+      emailjs_status: response.status,
+      emailjs_text: response.text,
+      fechaEnvio: new Date()
+    });
+    
+    // 5. Éxito
+    mostrarFeedbackStatus('✅ ¡Comentario enviado correctamente!', 'success');
+    btn.disabled = false;
+    btn.textContent = '✓ Enviado';
+    
+    // Cerrar modal después de 2 segundos
     setTimeout(() => {
-      mostrarFeedbackStatus('✅ ¡Gracias! Tu comentario se ha registrado. Se abrió tu cliente de email para enviarlo.', 'success');
-      btn.disabled = false;
-      btn.textContent = '📤 Enviar Comentario';
-      
-      // Cerrar modal después de 3 segundos
-      setTimeout(() => {
-        cerrarModalFeedback();
-        mostrarNotificacion('Gracias por tu feedback 💚');
-      }, 3000);
-    }, 1000);
+      cerrarModalFeedback();
+      mostrarNotificacion('Gracias por tu feedback 💚');
+    }, 2000);
     
   } catch (error) {
     console.error('Error al enviar feedback:', error);
-    mostrarFeedbackStatus('❌ Error al enviar. Por favor intenta de nuevo.', 'error');
+    
+    // Mensajes de error específicos
+    let mensajeError = 'Error al enviar. Por favor intenta de nuevo.';
+    
+    if (error.text) {
+      console.error('EmailJS Error:', error.text);
+      
+      if (error.text.includes('Invalid')) {
+        mensajeError = 'Error de configuración. Contacta al administrador.';
+      } else if (error.text.includes('Limit')) {
+        mensajeError = 'Límite de envíos alcanzado. Intenta más tarde.';
+      }
+    }
+    
+    // Marcar como no enviado pero guardado
+    try {
+      if (docRef) {
+        await updateDoc(doc(db, 'feedback', docRef.id), {
+          enviado: false,
+          error: error.text || error.message,
+          fechaError: new Date()
+        });
+      }
+    } catch (updateError) {
+      console.error('Error al actualizar estado:', updateError);
+    }
+    
+    mostrarFeedbackStatus('❌ ' + mensajeError, 'error');
     btn.disabled = false;
-    btn.textContent = '📤 Enviar Comentario';
+    btn.textContent = '📤 Reintentar';
   }
 };
 
