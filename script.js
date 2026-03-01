@@ -2044,7 +2044,7 @@ Idioma: ${navigator.language}
       from_email: email || 'usuario.anonimo@sistema.com',
       tipo: `${emoji} ${tipo.toUpperCase()}`,
       mensaje: mensaje,
-      info_tecnica: infoTecnica || 'No incluida',
+      info_tecnica: infoTecnica || 'Información Técnica No incluida',
       usuario: window.currentUser ? window.currentUser.email : 'Anónimo',
       fecha: new Date().toLocaleString('es-PE', { 
         dateStyle: 'full', 
