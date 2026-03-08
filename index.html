@@ -661,7 +661,8 @@ SOFTWARE.</pre>
     <!-- Contenedor relativo para posicionar el badge sobre el botón -->
     <div style="position: relative; display: inline-block;">
       <button 
-        onclick="abrirModalFeedback()" 
+        onclick="abrirModalFeedback()"
+        style="position: fixed; bottom: 24px; left: 24px; z-index: 999;" 
         title="Enviar Feedback / Ver notificaciones"
         onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 18px rgba(103,157,202,0.6)'"
         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 14px rgba(103,157,202,0.5)'"
