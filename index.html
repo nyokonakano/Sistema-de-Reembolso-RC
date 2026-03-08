@@ -657,29 +657,54 @@ SOFTWARE.</pre>
   </footer>
 
   <!--Botón flotante de comentarios-->
-  <div style="position: fixed; bottom: 20px; right: 20px; z-index: 998;">
-    <button class="feedback-btn" onclick="abrirModalFeedback()" title="Enviar Feedback"
-      style="background:#679dca; border:none; border-radius:50%; width:48px; height:48px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 1.3rem;">
-      💬
-    </button>
-    <!-- Badge de notificaciones no leídas -->
-    <span id="notifBadge" style="
-      display: none;
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      background: #e53e3e;
-      color: white;
-      border-radius: 50%;
-      min-width: 20px;
-      height: 20px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid white;
-      pointer-events: none;
-    ">0</span>
+  <div style="position: fixed; bottom: 24px; right: 24px; z-index: 999;">
+    <!-- Contenedor relativo para posicionar el badge sobre el botón -->
+    <div style="position: relative; display: inline-block;">
+      <button 
+        onclick="abrirModalFeedback()" 
+        title="Enviar Feedback / Ver notificaciones"
+        style="
+          background: #679dca;
+          border: none;
+          border-radius: 50%;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(103,157,202,0.5);
+          font-size: 1.3rem;
+          transition: transform 0.2s, box-shadow 0.2s;
+        "
+        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 18px rgba(103,157,202,0.6)'"
+        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 14px rgba(103,157,202,0.5)'"
+      >
+        💬
+      </button>
+
+      <!-- Badge rojo con número de notificaciones no leídas -->
+      <span id="notifBadge" style="
+        display: none;
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #e53e3e;
+        color: white;
+        border-radius: 50%;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 4px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        pointer-events: none;
+        box-shadow: 0 2px 6px rgba(229,62,62,0.4);
+        animation: badgePop 0.3s ease;
+      ">0</span>
+    </div>
   </div>
 
   <!--Modal de comnetarios-->
