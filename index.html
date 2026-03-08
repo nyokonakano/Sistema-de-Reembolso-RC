@@ -662,7 +662,23 @@ SOFTWARE.</pre>
     <div style="position: relative; display: inline-block;">
       <button 
         onclick="abrirModalFeedback()"
-        style="position: fixed; bottom: 24px; left: 24px; z-index: 999;" 
+        style="position: fixed; 
+              bottom: 24px; 
+              left: 24px; 
+              z-index: 999;
+              background: #679dca;
+              border: none;
+              border-radius: 50%;
+              width: 48px;
+              height: 48px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              box-shadow: 0 4px 14px rgba(103,157,202,0.5);
+              font-size: 1.3rem;
+              transition: transform 0.2s, box-shadow 0.2s;
+              " 
         title="Enviar Feedback / Ver notificaciones"
         onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 18px rgba(103,157,202,0.6)'"
         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 14px rgba(103,157,202,0.5)'"
