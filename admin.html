@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin — Sistema RC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <style>
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #13161d;
+      --surface2:  #1a1e28;
+      --border:    #252a38;
+      --border2:   #2e3547;
+      --accent:    #4f8ef7;
+      --accent2:   #38c96b;
+      --warn:      #f5a623;
+      --danger:    #e05252;
+      --text:      #e8ecf4;
+      --text2:     #8892a4;
+      --text3:     #555f72;
+      --radius:    8px;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-head: 'Syne', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 13px;
+    }
+
+    /* ── AUTH ── */
+    #authScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 0%, #1a2540 0%, var(--bg) 70%);
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 40px;
+      width: 360px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    }
+
+    .auth-logo {
+      font-family: var(--font-head);
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .auth-sub {
+      color: var(--text2);
+      font-size: 0.8rem;
+      margin-bottom: 28px;
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .auth-input:focus { border-color: var(--accent); }
+
+    .auth-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 4px;
+    }
+
+    .auth-btn:hover { opacity: 0.85; }
+
+    .auth-error {
+      background: rgba(224, 82, 82, 0.15);
+      border: 1px solid rgba(224, 82, 82, 0.4);
+      color: #fc8181;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    /* ── LAYOUT ── */
+    #adminApp { display: none; min-height: 100vh; flex-direction: column; }
+    #adminApp.visible { display: flex; }
+
+    .topbar {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-logo {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: -0.3px;
+      margin-right: 8px;
+    }
+
+    .topbar-badge {
+      background: rgba(79, 142, 247, 0.15);
+      border: 1px solid rgba(79, 142, 247, 0.3);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .topbar-spacer { flex: 1; }
+
+    .online-dot {
+      width: 8px; height: 8px;
+      background: var(--accent2);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--accent2);
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .topbar-user {
+      color: var(--text2);
+      font-size: 0.8rem;
+    }
+
+    .topbar-logout {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text2);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .topbar-logout:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .back-btn {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text2);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .back-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── NAV TABS ── */
+    .nav-tabs {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      padding: 0 24px;
+      gap: 4px;
+    }
+
+    .nav-tab {
+      padding: 12px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text2);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      position: relative;
+      bottom: -1px;
+    }
+
+    .nav-tab:hover { color: var(--text); }
+
+    .nav-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .nav-badge {
+      background: var(--danger);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 10px;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .main-content {
+      flex: 1;
+      padding: 24px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── CARDS & GRIDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .stat-card:hover { border-color: var(--border2); }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .stat-card.blue::before   { background: var(--accent); }
+    .stat-card.green::before  { background: var(--accent2); }
+    .stat-card.warn::before   { background: var(--warn); }
+    .stat-card.danger::before { background: var(--danger); }
+
+    .stat-icon {
+      font-size: 1.4rem;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: var(--font-head);
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      color: var(--text2);
+      font-size: 0.75rem;
+    }
+
+    .stat-delta {
+      font-size: 0.7rem;
+      margin-top: 6px;
+    }
+
+    .stat-delta.up   { color: var(--accent2); }
+    .stat-delta.warn { color: var(--warn); }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: var(--font-head);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title span { color: var(--text3); font-size: 0.75rem; font-family: var(--font-mono); font-weight: 400; }
+
+    /* ── TABLE ── */
+    .data-table {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .data-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      background: var(--surface2);
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 0.8rem;
+      vertical-align: middle;
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .badge-admin   { background: rgba(79,142,247,0.15); color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+    .badge-editor  { background: rgba(56,201,107,0.12); color: var(--accent2); border: 1px solid rgba(56,201,107,0.3); }
+    .badge-viewer  { background: rgba(136,146,164,0.12);color: var(--text2);   border: 1px solid var(--border2); }
+    .badge-online  { background: rgba(56,201,107,0.15); color: var(--accent2); border: 1px solid rgba(56,201,107,0.3); }
+    .badge-offline { background: rgba(85,95,114,0.2);   color: var(--text3);   border: 1px solid var(--border); }
+    .badge-blocked { background: rgba(224,82,82,0.12);  color: var(--danger);  border: 1px solid rgba(224,82,82,0.3); }
+
+    .badge-pending  { background: rgba(245,166,35,0.12); color: var(--warn);   border: 1px solid rgba(245,166,35,0.3); }
+    .badge-review   { background: rgba(79,142,247,0.12); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+    .badge-resolved { background: rgba(56,201,107,0.12); color: var(--accent2);border: 1px solid rgba(56,201,107,0.3); }
+
+    /* ── ACTION BUTTONS ── */
+    .btn-xs {
+      padding: 4px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text2);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-xs:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-xs.danger:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-xs.success:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    .btn-sm {
+      padding: 7px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-sm.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-sm.primary:hover { opacity: 0.85; }
+    .btn-sm:hover { border-color: var(--text2); }
+
+    /* ── ONLINE PULSE ── */
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .status-dot.online  { background: var(--accent2); box-shadow: 0 0 5px var(--accent2); animation: pulse-dot 2s infinite; }
+    .status-dot.offline { background: var(--text3); }
+    .status-dot.blocked { background: var(--danger); }
+
+    /* ── FEEDBACK CARDS ── */
+    .feedback-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .feedback-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      transition: border-color 0.2s;
+    }
+
+    .feedback-card:hover { border-color: var(--border2); }
+
+    .feedback-card.pending  { border-left: 3px solid var(--warn); }
+    .feedback-card.review   { border-left: 3px solid var(--accent); }
+    .feedback-card.resolved { border-left: 3px solid var(--accent2); opacity: 0.65; }
+
+    .feedback-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .feedback-from {
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .feedback-date { color: var(--text3); font-size: 0.72rem; }
+
+    .feedback-msg {
+      color: var(--text2);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+
+    .feedback-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .feedback-note-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 6px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      outline: none;
+    }
+
+    .feedback-note-input:focus { border-color: var(--accent); }
+
+    .feedback-note-display {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--surface2);
+      border-left: 2px solid var(--accent);
+      border-radius: 4px;
+      color: var(--text2);
+      font-size: 0.78rem;
+      font-style: italic;
+    }
+
+    /* ── AUDIT LOG ── */
+    .log-entry {
+      display: flex;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    .log-entry:last-child { border-bottom: none; }
+
+    .log-time {
+      color: var(--text3);
+      font-size: 0.72rem;
+      white-space: nowrap;
+      min-width: 130px;
+      padding-top: 2px;
+    }
+
+    .log-icon {
+      font-size: 0.9rem;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .log-text { color: var(--text2); font-size: 0.8rem; line-height: 1.5; }
+    .log-text strong { color: var(--text); }
+
+    .log-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px 16px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    /* ── FILTERS ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-input {
+      padding: 7px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .filter-input:focus { border-color: var(--accent); }
+
+    select.filter-input { cursor: pointer; }
+
+    /* ── ROLE SELECTOR ── */
+    .role-select {
+      padding: 4px 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .role-select:focus { border-color: var(--accent); }
+
+    /* ── ACTIVITY CHART ── */
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 80px;
+      margin-top: 12px;
+    }
+
+    .chart-bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .chart-bar {
+      width: 100%;
+      background: var(--accent);
+      border-radius: 3px 3px 0 0;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      min-height: 3px;
+    }
+
+    .chart-bar:hover { opacity: 1; }
+
+    .chart-label {
+      font-size: 0.62rem;
+      color: var(--text3);
+      text-align: center;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    }
+
+    .modal-title {
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.83rem;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    .modal-input:focus { border-color: var(--accent); }
+
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+    /* ── TOAST ── */
+    #adminToast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 12px 18px;
+      font-size: 0.8rem;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 9999;
+    }
+
+    #adminToast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text3);
+      font-size: 0.82rem;
+    }
+
+    .empty-icon { font-size: 2rem; margin-bottom: 10px; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .main-content { padding: 16px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .data-table { overflow-x: auto; display: block; }
+      .topbar-user { display: none; }
+    }
+
+    /* ── LOADING SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── PERMISSION DENIED ── */
+    #permDenied {
+      display: none;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      color: var(--text2);
+    }
+
+    #permDenied.visible { display: flex; }
+
+    .perm-icon { font-size: 3rem; }
+    .perm-title { font-family: var(--font-head); font-size: 1.4rem; font-weight: 800; color: var(--danger); }
+    .perm-sub { font-size: 0.82rem; color: var(--text3); }
+  </style>
+</head>
+<body>
+
+<!-- AUTH SCREEN — redirige si no hay sesión activa -->
+<div id="authScreen" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-logo">🛡️ Admin RC</div>
+    <div class="auth-sub">Redirigiendo al sistema...</div>
+    <p style="color:var(--text2); font-size:0.8rem; margin-top:16px; text-align:center;">
+      Debes iniciar sesión desde el sistema principal.
+    </p>
+    <a href="index.html" class="auth-btn" style="display:block; text-align:center; text-decoration:none; margin-top:16px;">
+      Ir al Sistema
+    </a>
+  </div>
+</div>
+
+<!-- PERMISSION DENIED -->
+<div id="permDenied">
+  <div class="perm-icon">🚫</div>
+  <div class="perm-title">Acceso Denegado</div>
+  <div class="perm-sub">Tu cuenta no tiene permisos de administrador.</div>
+  <a href="index.html" class="btn-sm" style="margin-top:8px;">← Volver al Sistema</a>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">RC Admin</div>
+    <div class="topbar-badge">Panel de Control</div>
+    <div class="topbar-spacer"></div>
+    <div class="online-dot"></div>
+    <div class="topbar-user" id="topbarUser"></div>
+    <a href="index.html" class="back-btn">← Sistema</a>
+    <button class="topbar-logout" onclick="adminLogout()">Salir</button>
+  </div>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('stats')" id="tab-stats">
+      📊 Estadísticas
+    </button>
+    <button class="nav-tab" onclick="switchTab('users')" id="tab-users">
+      👥 Usuarios
+    </button>
+    <button class="nav-tab" onclick="switchTab('feedback')" id="tab-feedback">
+      💬 Feedback
+      <span class="nav-badge" id="feedbackBadge" style="display:none">0</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab('audit')" id="tab-audit">
+      🗒️ Audit Log
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- ══ TAB: ESTADÍSTICAS ══ -->
+    <div class="tab-panel active" id="panel-stats">
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-value" id="statUsers">—</div>
+          <div class="stat-label">Usuarios registrados</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">🟢</div>
+          <div class="stat-value" id="statOnline">—</div>
+          <div class="stat-label">En línea ahora</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-icon">💬</div>
+          <div class="stat-value" id="statFeedback">—</div>
+          <div class="stat-label">Feedback pendiente</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">📝</div>
+          <div class="stat-value" id="statPlantillas">—</div>
+          <div class="stat-label">Plantillas creadas</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">💰</div>
+          <div class="stat-value" id="statTasas">—</div>
+          <div class="stat-label">Tasas registradas</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-icon">🗒️</div>
+          <div class="stat-value" id="statLogs">—</div>
+          <div class="stat-label">Acciones registradas</div>
+        </div>
+      </div>
+
+      <!-- Actividad reciente por día -->
+      <div class="section-header">
+        <div class="section-title">Actividad últimos 7 días <span id="activitySubtitle"></span></div>
+      </div>
+      <div class="data-table" style="padding: 20px; margin-bottom: 28px;">
+        <div class="chart-bars" id="activityChart"></div>
+      </div>
+
+      <!-- Top usuarios -->
+      <div class="section-header" style="margin-top: 8px;">
+        <div class="section-title">Usuarios más activos</div>
+      </div>
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Usuario</th>
+              <th>Acciones</th>
+              <th>Último acceso</th>
+            </tr>
+          </thead>
+          <tbody id="topUsersTable">
+            <tr><td colspan="4" style="text-align:center; color: var(--text3); padding: 24px;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ TAB: USUARIOS ══ -->
+    <div class="tab-panel" id="panel-users">
+      <div class="filter-bar">
+        <input type="text" class="filter-input" id="userSearch" placeholder="🔍 Buscar usuario..." oninput="renderUsers()" style="flex:1; min-width:200px;">
+        <select class="filter-input" id="userRoleFilter" onchange="renderUsers()">
+          <option value="">Todos los roles</option>
+          <option value="admin">Admin</option>
+          <option value="editor">Editor</option>
+          <option value="user">User</option>
+        </select>
+        <select class="filter-input" id="userStatusFilter" onchange="renderUsers()">
+          <option value="">Todos los estados</option>
+          <option value="online">En línea</option>
+          <option value="offline">Desconectado</option>
+          <option value="blocked">Bloqueado</option>
+        </select>
+      </div>
+
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Último acceso</th>
+              <th>Registrado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable">
+            <tr><td colspan="6" style="text-align:center; color: var(--text3); padding: 24px;">Cargando usuarios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ TAB: FEEDBACK ══ -->
+    <div class="tab-panel" id="panel-feedback">
+      <div class="filter-bar">
+        <select class="filter-input" id="feedbackStatusFilter" onchange="renderFeedback()">
+          <option value="">Todos los estados</option>
+          <option value="pending">Pendiente</option>
+          <option value="review">En revisión</option>
+          <option value="resolved">Resuelto</option>
+        </select>
+        <select class="filter-input" id="feedbackTypeFilter" onchange="renderFeedback()">
+          <option value="">Todos los tipos</option>
+          <option value="bug">🐛 Bug</option>
+          <option value="sugerencia">💡 Sugerencia</option>
+          <option value="pregunta">❓ Pregunta</option>
+          <option value="felicitacion">⭐ Felicitación</option>
+          <option value="otro">📝 Otro</option>
+        </select>
+        <input type="text" class="filter-input" id="feedbackSearch" placeholder="🔍 Buscar en mensajes..." oninput="renderFeedback()" style="flex:1; min-width:180px;">
+      </div>
+
+      <div class="feedback-grid" id="feedbackList">
+        <div class="empty"><div class="empty-icon">💬</div>Cargando feedback...</div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: AUDIT LOG ══ -->
+    <div class="tab-panel" id="panel-audit">
+      <div class="filter-bar">
+        <input type="text" class="filter-input" id="auditSearch" placeholder="🔍 Buscar en el log..." oninput="renderAudit()" style="flex:1; min-width:200px;">
+        <select class="filter-input" id="auditActionFilter" onchange="renderAudit()">
+          <option value="">Todas las acciones</option>
+          <option value="login">Login</option>
+          <option value="plantilla">Plantillas</option>
+          <option value="tasa">Tasas</option>
+          <option value="feedback">Feedback</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button class="btn-sm" onclick="exportAuditCSV()">⬇ Exportar CSV</button>
+      </div>
+
+      <div class="log-container" id="auditLog">
+        <div class="empty"><div class="empty-icon">🗒️</div>Cargando registros...</div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /adminApp -->
+
+<!-- MODAL: Editar usuario -->
+<div class="modal-overlay" id="modalUser">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Editar Usuario</div>
+    <div style="color: var(--text2); font-size:0.8rem; margin-bottom:16px;" id="modalUserEmail"></div>
+    <label style="color:var(--text2); font-size:0.75rem; display:block; margin-bottom:6px;">Rol</label>
+    <select class="modal-input" id="modalUserRole">
+      <option value="user">👁 User — Solo lectura</option>
+      <option value="editor">✏️ Editor — Puede crear/editar</option>
+      <option value="admin">🛡️ Admin — Acceso total</option>
+    </select>
+    <label style="color:var(--text2); font-size:0.75rem; display:block; margin-bottom:6px; margin-top:4px;">Estado</label>
+    <select class="modal-input" id="modalUserStatus">
+      <option value="active">✅ Activo</option>
+      <option value="blocked">🚫 Bloqueado</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeModal('modalUser')">Cancelar</button>
+      <button class="btn-sm primary" onclick="saveUser()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="adminToast"></div>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>

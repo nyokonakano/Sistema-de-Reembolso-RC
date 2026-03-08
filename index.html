@@ -37,9 +37,14 @@
       </div>
 
       <div class="user-info">
-        <span class="user-email" id="userEmail"></span>
-        <button class="logout-btn" onclick="logout()">Salir</button>
-      </div>
+      <span class="user-email" id="userEmail"></span>
+      <!-- NUEVO: botón admin, oculto por defecto -->
+      <a href="admin.html" id="adminPanelBtn" 
+        style="display:none; padding:6px 12px; background:#4f8ef7; color:white; border-radius:4px; font-size:0.85rem; text-decoration:none; font-weight:500;">
+        🛡️ Admin
+      </a>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
     </div>
 
     <div class="tabs">
@@ -652,9 +657,30 @@ SOFTWARE.</pre>
   </footer>
 
   <!--Botón flotante de comentarios-->
-  <button class="feedback-btn" onclick="abrirModalFeedback()" title="Enviar Feedback" style="background: #679dca; border-color: transparent; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-    💬
-  </button>
+  <div style="position: fixed; bottom: 20px; right: 20px; z-index: 998;">
+    <button class="feedback-btn" onclick="abrirModalFeedback()" title="Enviar Feedback"
+      style="background:#679dca; border:none; border-radius:50%; width:48px; height:48px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 1.3rem;">
+      💬
+    </button>
+    <!-- Badge de notificaciones no leídas -->
+    <span id="notifBadge" style="
+      display: none;
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #e53e3e;
+      color: white;
+      border-radius: 50%;
+      min-width: 20px;
+      height: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      pointer-events: none;
+    ">0</span>
+  </div>
 
   <!--Modal de comnetarios-->
   <div class="modal" id="modalFeedback">
@@ -664,6 +690,24 @@ SOFTWARE.</pre>
         <button class="modal-close" onclick="cerrarModalFeedback()" title="Cerrar Ventana">×</button>
       </div>
       <div class="feedback-body">
+        
+        <!-- SECCIÓN DE RESPUESTAS DEL ADMIN -->
+        <div id="notifSeccion" style="display:none; margin-bottom: 20px;">
+          <div style="font-weight:600; color:#2d3748; font-size:0.9rem; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+            <span>📬 Respuestas del administrador</span>
+            <button onclick="marcarTodasLeidas()" style="background:transparent; border:none; color:#3182ce; font-size:0.78rem; cursor:pointer; font-weight:500;">
+              Marcar todas como leídas
+            </button>
+          </div>
+          <div id="notifLista" style="
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #f7fafc;
+          "></div>
+          <div style="border-top: 1px solid #e2e8f0; margin: 16px 0;"></div>
+        </div>
         <p style="color: #718096; font-size: 0.9rem; margin-bottom: 16px;">
           Tus comentarios son muy importantes para mejorar el sistema. El desarrollador recibirá tu mensaje directamente.
         </p>

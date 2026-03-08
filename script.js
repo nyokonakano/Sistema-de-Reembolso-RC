@@ -31,6 +31,20 @@ let plantillaEnEdicion = null;
 let periodos = [2024];
 let periodoActual = 2024;
 
+// Esta función guarda cada acción importante en la colección 'auditLog' de Firestore.
+
+async function registrarAudit(tipo, descripcion) {
+  if (!window.currentUser) return;
+  try {
+    await addDoc(collection(db, 'auditLog'), {
+      tipo,
+      usuario:   window.currentUser.email,
+      descripcion,
+      timestamp: new Date()
+    });
+  } catch(e) { /* silencioso — el audit no debe romper el flujo */ }
+}
+
 // ════════════════════════════════════════════════════
 // CONFIGURACIÓN DE EMAILJS
 // ════════════════════════════════════════════════════
@@ -116,11 +130,35 @@ window.register = async function() {
 
 window.logout = async function() {
     try {
-    await signOut(auth);
+      await registrarAudit('logout', 'Cerró sesión en el sistema');
+      await signOut(auth);
     } catch (error) {
     mostrarNotificacion('Error al cerrar sesión');
     }
 };
+
+async function actualizarPresencia(email, online) {
+  try {
+    const q = query(collection(db, 'perfiles'), where('email', '==', email));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      await updateDoc(doc(db, 'perfiles', snap.docs[0].id), {
+        online,
+        lastSeen: new Date()
+      });
+    } else {
+      // Primera vez — crear perfil con rol viewer por defecto
+      await addDoc(collection(db, 'perfiles'), {
+        email,
+        rol:       'user',
+        estado:    'active',
+        online,
+        lastSeen:  new Date(),
+        createdAt: new Date()
+      });
+    }
+  } catch(e) { console.error('Presencia error:', e); }
+}
 
 function getErrorMessage(code) {
     const messages = {
@@ -134,23 +172,49 @@ function getErrorMessage(code) {
     return messages[code] || 'Error al autenticar';
 }
 
+//VERIFICAR ROL DE USUARIO PARA MOSTRAR BOTÓN DE ADMIN
+async function verificarRolAdmin(email) {
+  try {
+    const q = query(collection(db, 'perfiles'), where('email', '==', email));
+    const snap = await getDocs(q);
+    
+    if (!snap.empty && snap.docs[0].data().rol === 'admin') {
+      const btn = document.getElementById('adminPanelBtn');
+      if (btn) btn.style.display = 'inline-block';
+    }
+  } catch(e) {
+    console.error('Error al verificar rol:', e);
+  }
+}
+
 // Auth State Observer
 onAuthStateChanged(auth, async (user) => {
     document.getElementById('loadingContainer').style.display = 'none';
     
     if (user) {
-    window.currentUser = user;
-    document.getElementById('authContainer').style.display = 'none';
-    document.getElementById('appContainer').style.display = 'block';
-    document.getElementById('userEmail').textContent = user.email;
-    
-    await cargarDatosFirebase();
-    generarCE2();
-    renderizarTodasLasPlantillas();
+      iniciarNotificaciones(user.email);
+
+      await registrarAudit('login', 'Inició sesión en el sistema');
+      
+      window.currentUser = user;
+      document.getElementById('authContainer').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'block';
+      document.getElementById('userEmail').textContent = user.email;
+      
+      await actualizarPresencia(window.currentUser.email, true);
+      window.addEventListener('beforeunload', () => {
+        actualizarPresencia(window.currentUser.email, false);
+      });
+
+      await cargarDatosFirebase();
+      verificarRolAdmin(user.email);
+      generarCE2();
+      renderizarTodasLasPlantillas();
     } else {
-    window.currentUser = null;
-    document.getElementById('authContainer').style.display = 'block';
-    document.getElementById('appContainer').style.display = 'none';
+      
+      window.currentUser = null;
+      document.getElementById('authContainer').style.display = 'block';
+      document.getElementById('appContainer').style.display = 'none';
     }
 });
 
@@ -362,6 +426,8 @@ window.agregarTasa = async function() {
       createdAt: new Date()
     });
 
+    await registrarAudit('tasa', `Agregó tasa: "${nombre}" ${noReembolsable ? '(no reembolsable)' : `$${monto}`}`);
+
     // Limpiar campos
     if (noReembolsable) {
       document.getElementById('nombreTasaNoReembolsableInput').value = '';
@@ -383,9 +449,11 @@ window.agregarTasa = async function() {
 window.eliminarTasa = async function(id) {
     try {
     await deleteDoc(doc(db, 'tasas', id));
-    mostrarNotificacion('Tasa eliminada correctamente ✓');
+      await registrarAudit('tasa', `Eliminó tasa id: ${id}`);
+      mostrarNotificacion('Tasa eliminada correctamente ✓');
     } catch (error) {
-    mostrarNotificacion('Error al eliminar tasa');
+      await registrarAudit('tasa', `Error al eliminar tasa id: ${id}`);
+      mostrarNotificacion('Error al eliminar tasa');
     }
 };
 
@@ -522,6 +590,8 @@ window.guardarEdicionTasa = async function(id) {
       lastModifiedAt: new Date()
     });
 
+    await registrarAudit('edit', `Editó tasa: "${nombre}"`);
+
     cerrarModalEditarTasa();
     mostrarNotificacion('Tasa actualizada ✓');
   } catch (error) {
@@ -572,6 +642,8 @@ window.agregarPlantillaPersonalizada = async function() {
         createdAt: new Date()
     });
 
+    await registrarAudit('plantilla', `Creó plantilla: "${nombre}"`);
+
     document.getElementById('nombrePlantillaInput').value = '';
     document.getElementById('contenidoPlantillaInput').value = '';
     mostrarNotificacion('Plantilla agregada correctamente ✓');
@@ -582,10 +654,12 @@ window.eliminarPlantillaPersonalizada = async function(id) {
     if (!confirm('¿Eliminar esta plantilla?')) return;
 
     try {
-    await deleteDoc(doc(db, 'plantillas', id));
-    mostrarNotificacion('Plantilla eliminada correctamente ✓');
+      await deleteDoc(doc(db, 'plantillas', id));
+      await registrarAudit('plantilla', `Eliminó plantilla id: ${id}`);
+      mostrarNotificacion('Plantilla eliminada correctamente ✓');
     } catch (error) {
-    mostrarNotificacion('Error al eliminar plantilla');
+      await registrarAudit('plantilla', `Error al eliminar plantilla id: ${id}`);
+      mostrarNotificacion('Error al eliminar plantilla');
     }
 };
 
@@ -612,6 +686,8 @@ window.guardarEdicionPlantilla = async function() {
         createdBy: currentUser.email,
         createdAt: new Date()
     });
+
+    await registrarAudit('edit', `Editó plantilla: "${plantillaEnEdicion?.nombre}"`);
 
     document.getElementById('nombrePlantillaInput').value = '';
     document.getElementById('contenidoPlantillaInput').value = '';
@@ -1079,7 +1155,9 @@ window.toggleDropdown = function() {
     }
 };
 
-window.copiarPlantilla = function(plantilla) {
+window.copiarPlantilla = async function(plantilla) {
+    await registrarAudit('copy', `Copió plantilla: "${plantilla.nombre}"`);  
+
     const ruta = document.getElementById('rutaInput').value.trim() || 'LIM';
     const ce2 = document.getElementById('ce2Input').value;
     const fecha = document.getElementById('fechaInput').value.trim() || '';
@@ -1919,19 +1997,22 @@ window.calcularPE = function() {
 window.copiarPE = function() {
   const resultado = document.getElementById('peResultado').textContent.replace('$', '');
   copiarTexto(resultado);
-  
-  // Feedback visual
-  const btn = event.target;
+
+  // FIX: usar closest('button') para siempre apuntar al botón, 
+  // no a un texto hijo del botón
+  const btn = (event.target).closest('button');
+  if (!btn) return;
+
   const textoOriginal = btn.textContent;
   btn.textContent = '✓ Copiado';
-  btn.style.background = 'rgba(56, 161, 105, 0.5)';
-  
+  btn.style.background = '#38a169';  // color sólido, más visible que rgba
+
   setTimeout(() => {
     btn.textContent = textoOriginal;
-    btn.style.background = 'rgba(255, 255, 255, 0.2)';
+    btn.style.background = '#3182ce';  // vuelve al azul base del botón
   }, 1500);
-  
-  mostrarNotificacion('📊 PapaEcho copiado: $' + resultado);
+
+  mostrarNotificacion('📊 PE copiado: $' + resultado);
 };
 
 // Inicializar PE con valores por defecto
@@ -1952,6 +2033,14 @@ window.abrirModalFeedback = function() {
     document.getElementById('feedbackEmail').value = window.currentUser.email;
   }
 };
+
+// CTRL+ENTER para enviar feedback desde el textarea
+document.getElementById('feedbackMensaje').addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    enviarFeedback();
+  }
+});
 
 window.cerrarModalFeedback = function() {
   document.getElementById('modalFeedback').classList.remove('show');
@@ -2130,4 +2219,111 @@ function obtenerNombreNavegador() {
   if (ua.indexOf('Edge') > -1) return 'Edge';
   if (ua.indexOf('MSIE') > -1 || ua.indexOf('Trident/') > -1) return 'Internet Explorer';
   return 'Desconocido';
+}
+
+// ════════════════════════════════════════
+// SISTEMA DE NOTIFICACIONES EN FEEDBACK BTN
+// ════════════════════════════════════════
+
+function iniciarNotificaciones(email) {
+  const q = query(
+    collection(db, 'notificaciones'),
+    where('paraUsuario', '==', email),
+    orderBy('creadoAt', 'desc')
+  );
+
+  onSnapshot(q, (snap) => {
+    const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    actualizarBadgeNotif(notifs);
+    renderNotificaciones(notifs);
+  });
+}
+
+function actualizarBadgeNotif(notifs) {
+  const badge    = document.getElementById('notifBadge');
+  if (!badge) return;
+  const noLeidas = notifs.filter(n => !n.leida).length;
+  badge.textContent   = noLeidas > 9 ? '9+' : noLeidas;
+  badge.style.display = noLeidas > 0 ? 'flex' : 'none';
+}
+
+function renderNotificaciones(notifs) {
+  const lista    = document.getElementById('notifLista');
+  const seccion  = document.getElementById('notifSeccion');
+  if (!lista || !seccion) return;
+
+  if (!notifs.length) {
+    seccion.style.display = 'none';
+    return;
+  }
+
+  seccion.style.display = 'block';
+
+  const tipoEmoji = { sugerencia:'💡', bug:'🐛', pregunta:'❓', felicitacion:'⭐', otro:'📝' };
+  const estadoLabel = { pending:'⏳ Pendiente', review:'🔍 En revisión', resolved:'✅ Resuelto' };
+
+  lista.innerHTML = notifs.map(n => {
+    const fecha = n.creadoAt?.toDate ? formatNotifTime(n.creadoAt.toDate()) : '';
+    const leida = n.leida;
+    const emoji = tipoEmoji[n.feedbackTipo] || '📋';
+
+    return `
+      <div onclick="marcarLeida('${n.id}')" style="
+        padding: 12px 14px;
+        border-bottom: 1px solid #e2e8f0;
+        cursor: pointer;
+        background: ${leida ? 'white' : '#ebf8ff'};
+        transition: background 0.2s;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      ">
+        <div style="font-size:1.1rem; flex-shrink:0; margin-top:1px;">${emoji}</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:${leida ? '400' : '600'}; color:#2d3748; font-size:0.82rem; margin-bottom:3px;">
+            ${n.titulo || 'Notificación'}
+            ${!leida ? '<span style="display:inline-block;width:7px;height:7px;background:#3182ce;border-radius:50%;margin-left:5px;vertical-align:middle;"></span>' : ''}
+          </div>
+          <div style="color:#4a5568; font-size:0.8rem; line-height:1.5;">
+            ${n.mensaje || ''}
+          </div>
+          <div style="color:#a0aec0; font-size:0.7rem; margin-top:4px;">${fecha}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Quitar borde del último elemento
+  const items = lista.querySelectorAll('div[onclick]');
+  if (items.length) items[items.length - 1].style.borderBottom = 'none';
+}
+
+window.marcarLeida = async function (id) {
+  try {
+    await updateDoc(doc(db, 'notificaciones', id), { leida: true });
+  } catch { /* silencioso */ }
+};
+
+window.marcarTodasLeidas = async function () {
+  const email = window.currentUser?.email;
+  if (!email) return;
+  try {
+    const q    = query(
+      collection(db, 'notificaciones'),
+      where('paraUsuario', '==', email),
+      where('leida', '==', false)
+    );
+    const snap = await getDocs(q);
+    await Promise.all(snap.docs.map(d =>
+      updateDoc(doc(db, 'notificaciones', d.id), { leida: true })
+    ));
+    mostrarNotificacion('✓ Todas marcadas como leídas');
+  } catch { /* silencioso */ }
+};
+
+function formatNotifTime(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60)    return 'hace unos segundos';
+  if (diff < 3600)  return `hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
+  return date.toLocaleDateString('es-PE', { day:'2-digit', month:'short' });
 }
