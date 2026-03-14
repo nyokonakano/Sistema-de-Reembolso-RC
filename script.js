@@ -2334,6 +2334,11 @@ function formatNotifTime(date) {
 // ════════════════════════════════════════
 
 window.abrirDashboardFeedback = async function () {
+  
+  // Cerrar ell modal del feedback para evitar solapamientos
+  document.getElementById('modalFeedback').classList.remove('show');
+
+  // Abrir modal del dashboard
   document.getElementById('modalDashboardFeedback').classList.add('show');
   await cargarMisFeedbacks();
 };
@@ -2352,14 +2357,20 @@ async function cargarMisFeedbacks() {
   try {
     const q    = query(
       collection(db, 'feedback'),
-      where('usuario', '==', email),
-      orderBy('fecha', 'desc')
+      where('usuario', '==', email)
     );
     const snap = await getDocs(q);
-    const feedbacks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const feedbacks = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const fechaA = a.fecha?.toDate ? a.fecha.toDate() : new Date(0);
+        const fechaB = b.fecha?.toDate ? b.fecha.toDate() : new Date(0);
+        return fechaB - fechaA;
+      });
 
     // Actualizar resumen
-    document.getElementById('resumenTotal').textContent    = feedbacks.length;
+    document.getElementById('resumenTotal').textContent     = feedbacks.length;
     document.getElementById('resumenPendiente').textContent = feedbacks.filter(f => !f.adminEstado || f.adminEstado === 'pending').length;
     document.getElementById('resumenRevision').textContent  = feedbacks.filter(f => f.adminEstado === 'review').length;
     document.getElementById('resumenResuelto').textContent  = feedbacks.filter(f => f.adminEstado === 'resolved').length;
@@ -2373,19 +2384,20 @@ async function cargarMisFeedbacks() {
       return;
     }
 
-    const tipoEmoji  = { sugerencia:'💡', bug:'🐛', pregunta:'❓', felicitacion:'⭐', otro:'📝' };
+    const tipoEmoji = { sugerencia:'💡', bug:'🐛', pregunta:'❓', felicitacion:'⭐', otro:'📝' };
 
     lista.innerHTML = feedbacks.map(f => {
-      const estado      = f.adminEstado || 'pending';
-      const emoji       = tipoEmoji[f.tipo] || '📝';
-      const fecha       = f.fecha?.toDate ? f.fecha.toDate().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' }) : '—';
-      const tieneNota   = f.adminNota && f.adminNota.length > 0;
+      const estado    = f.adminEstado || 'pending';
+      const emoji     = tipoEmoji[f.tipo] || '📝';
+      const fecha     = f.fecha?.toDate
+        ? f.fecha.toDate().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' })
+        : '—';
+      const tieneNota = f.adminNota && f.adminNota.length > 0;
 
-      // Colores y etiquetas por estado
       const estadoConfig = {
-        pending:  { color:'#e53e3e', bg:'#fff5f5', border:'#fed7d7', label:'⏳ Pendiente',    desc:'Tu feedback está en espera de revisión.' },
-        review:   { color:'#3182ce', bg:'#ebf8ff', border:'#bee3f8', label:'🔍 En revisión',  desc:'El administrador está revisando tu feedback.' },
-        resolved: { color:'#38a169', bg:'#f0fff4', border:'#c6f6d5', label:'✅ Resuelto',     desc:'Tu feedback fue atendido.' }
+        pending:  { color:'#e53e3e', bg:'#fff5f5', border:'#fed7d7', label:'⏳ Pendiente',   desc:'Tu feedback está en espera de revisión.' },
+        review:   { color:'#3182ce', bg:'#ebf8ff', border:'#bee3f8', label:'🔍 En revisión', desc:'El administrador está revisando tu feedback.' },
+        resolved: { color:'#38a169', bg:'#f0fff4', border:'#c6f6d5', label:'✅ Resuelto',    desc:'Tu feedback fue atendido.' }
       };
       const cfg = estadoConfig[estado] || estadoConfig.pending;
 
@@ -2397,7 +2409,6 @@ async function cargarMisFeedbacks() {
           padding: 16px;
           background: white;
         ">
-          <!-- Header -->
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-size:1.1rem;">${emoji}</span>
@@ -2415,7 +2426,6 @@ async function cargarMisFeedbacks() {
             ">${cfg.label}</span>
           </div>
 
-          <!-- Mensaje del usuario -->
           <div style="
             background: #f7fafc;
             border: 1px solid #edf2f7;
@@ -2427,7 +2437,6 @@ async function cargarMisFeedbacks() {
             margin-bottom: ${tieneNota ? '10px' : '0'};
           ">${f.mensaje || ''}</div>
 
-          <!-- Respuesta del admin -->
           ${tieneNota ? `
             <div style="
               background: ${cfg.bg};
