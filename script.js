@@ -2117,14 +2117,15 @@ Idioma: ${navigator.language}
   try {
     // 1. Guardar en Firebase para respaldo
     const docRef = await addDoc(collection(db, 'feedback'), {
-      email: email || 'anónimo',
-      tipo: tipo,
-      mensaje: mensaje,
-      infoTecnica: incluirInfo ? infoTecnica : null,
-      usuario: window.currentUser ? window.currentUser.email : 'anónimo',
-      fecha: new Date(),
-      enviado: false,
-      leido: false
+      email:        email || 'anónimo',
+      tipo:         tipo,
+      mensaje:      mensaje,
+      usuario:      window.currentUser ? window.currentUser.email : 'anónimo',
+      paraUsuario:  window.currentUser ? window.currentUser.email : '',
+      infoTecnica:  incluirInfo ? infoTecnica : null,
+      fecha:        new Date(),
+      enviado:      false,
+      leido:        false
     });
     
     // 2. Preparar parámetros para EmailJS

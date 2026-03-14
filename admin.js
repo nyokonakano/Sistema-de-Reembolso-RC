@@ -251,26 +251,87 @@ window.renderFeedback = function () {
 
 window.cambiarEstadoFeedback = async function (id, estado) {
   try {
+    const feedback     = allFeedback.find(f => f.id === id);
+    const emailUsuario = feedback?.paraUsuario 
+                      || feedback?.usuario 
+                      || feedback?.email 
+                      || '';
+
     await updateDoc(doc(db, 'feedback', id), {
       adminEstado:      estado,
       adminAtendidoPor: currentAdmin.email,
       adminAtendidoAt:  serverTimestamp()
     });
-    await registrarAudit('feedback', currentAdmin.email, `Cambió estado de feedback a "${estado}"`);
+
+    const mensajeEstado = {
+      pending:  'Tu comentario está pendiente de revisión.',
+      review:   'Tu comentario está siendo revisado por el equipo.',
+      resolved: '¡Tu comentario ha sido resuelto! Gracias por tu feedback.'
+    };
+
+    if (emailUsuario) {
+      await addDoc(collection(db, 'notificaciones'), {
+        paraUsuario:  emailUsuario,
+        tipo:         'estado',
+        titulo:       '📋 Actualización de tu feedback',
+        mensaje:      mensajeEstado[estado] || 'El estado de tu feedback fue actualizado.',
+        feedbackId:   id,
+        feedbackTipo: feedback?.tipo || 'otro',
+        nuevoEstado:  estado,
+        leida:        false,
+        creadoPor:    currentAdmin.email,
+        creadoAt:     serverTimestamp()
+      });
+    }
+
+    await registrarAudit('feedback', currentAdmin.email, `Cambió estado a "${estado}"`);
     toast('Estado actualizado → ' + estado);
-  } catch { toast('❌ Error al actualizar'); }
+  } catch (e) {
+    console.error(e);
+    toast('❌ Error: ' + e.message);
+  }
 };
 
 window.guardarNota = async function (id) {
   const nota = (document.getElementById('nota-' + id)?.value || '').trim();
+  if (!nota) { toast('Escribe una nota primero'); return; }
+
+  const feedback     = allFeedback.find(f => f.id === id);
+  const emailUsuario = feedback?.paraUsuario 
+                    || feedback?.usuario 
+                    || feedback?.email 
+                    || '';
+
+  if (!emailUsuario) {
+    toast('⚠️ No se encontró el email del usuario');
+    return;
+  }
+
   try {
     await updateDoc(doc(db, 'feedback', id), {
       adminNota:   nota,
       adminNotaBy: currentAdmin.email,
       adminNotaAt: serverTimestamp()
     });
-    toast('📌 Nota guardada');
-  } catch { toast('❌ Error al guardar nota'); }
+
+    await addDoc(collection(db, 'notificaciones'), {
+      paraUsuario:  emailUsuario,
+      tipo:         'respuesta',
+      titulo:       '💬 El administrador respondió tu feedback',
+      mensaje:      nota,
+      feedbackId:   id,
+      feedbackTipo: feedback?.tipo || 'otro',
+      leida:        false,
+      creadoPor:    currentAdmin.email,
+      creadoAt:     serverTimestamp()
+    });
+
+    await registrarAudit('feedback', currentAdmin.email, `Respondió feedback de ${emailUsuario}`);
+    toast('📌 Respuesta enviada al usuario ✓');
+  } catch (e) {
+    console.error(e);
+    toast('❌ Error: ' + e.message);
+  }
 };
 
 window.renderAudit = function () {
