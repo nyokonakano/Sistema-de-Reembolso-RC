@@ -503,6 +503,56 @@
   <div class="toast" id="toast">Texto copiado</div>
 
   <!-- Modals -->
+
+  <!-- MODAL: Dashboard de mis feedbacks -->
+  <div class="modal" id="modalDashboardFeedback">
+    <div class="modal-content" style="max-width:780px; width:95%;">
+      <div class="modal-header">
+        <div class="modal-title">📊 Mis Feedbacks</div>
+        <button class="modal-close" onclick="cerrarDashboardFeedback()">×</button>
+      </div>
+
+      <!-- Resumen -->
+      <div id="feedbackResumen" style="
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+      ">
+        <div style="background:#f7fafc; border:1px solid #e2e8f0; border-radius:6px; padding:14px; text-align:center;">
+          <div style="font-size:1.6rem; font-weight:700; color:#2d3748;" id="resumenTotal">0</div>
+          <div style="font-size:0.75rem; color:#718096; margin-top:2px;">Total enviados</div>
+        </div>
+        <div style="background:#fff5f5; border:1px solid #fed7d7; border-radius:6px; padding:14px; text-align:center;">
+          <div style="font-size:1.6rem; font-weight:700; color:#e53e3e;" id="resumenPendiente">0</div>
+          <div style="font-size:0.75rem; color:#718096; margin-top:2px;">⏳ Pendientes</div>
+        </div>
+        <div style="background:#ebf8ff; border:1px solid #bee3f8; border-radius:6px; padding:14px; text-align:center;">
+          <div style="font-size:1.6rem; font-weight:700; color:#3182ce;" id="resumenRevision">0</div>
+          <div style="font-size:0.75rem; color:#718096; margin-top:2px;">🔍 En revisión</div>
+        </div>
+        <div style="background:#f0fff4; border:1px solid #c6f6d5; border-radius:6px; padding:14px; text-align:center;">
+          <div style="font-size:1.6rem; font-weight:700; color:#38a169;" id="resumenResuelto">0</div>
+          <div style="font-size:0.75rem; color:#718096; margin-top:2px;">✅ Resueltos</div>
+        </div>
+      </div>
+
+      <!-- Lista de feedbacks -->
+      <div id="misFeedbacksLista" style="
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 480px;
+        overflow-y: auto;
+        padding-right: 4px;
+      ">
+        <div style="text-align:center; padding:32px; color:#718096;">
+          Cargando tus feedbacks...
+        </div>
+      </div>
+    </div>
+  </div>
+
    <!--Licencia -->
   <div id="licenseModal" class="modal-license" style="display: none;">
     <div class="modal-license-content">
@@ -714,9 +764,25 @@ SOFTWARE.</pre>
   <div class="modal" id="modalFeedback">
     <div class="modal-content">
       <div class="modal-header">
-        <div class="modal-title">💬 Enviar Comentarios o Sugerencias</div>
-        <button class="modal-close" onclick="cerrarModalFeedback()" title="Cerrar Ventana">×</button>
+      <div class="modal-title">💬 Enviar Comentarios o Sugerencias</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <!-- NUEVO botón -->
+        <button onclick="abrirDashboardFeedback()" style="
+          padding: 6px 12px;
+          background: #edf2f7;
+          border: 1px solid #e2e8f0;
+          border-radius: 4px;
+          font-size: 0.8rem;
+          color: #4a5568;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s;
+        " title="Ver el estado de mis feedbacks">
+          📊 Ver mis feedbacks
+        </button>
+        <button class="modal-close" onclick="cerrarModalFeedback()">×</button>
       </div>
+    </div>
       <div class="feedback-body">
         
         <!-- SECCIÓN DE RESPUESTAS DEL ADMIN -->

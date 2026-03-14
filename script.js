@@ -2328,3 +2328,131 @@ function formatNotifTime(date) {
   if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
   return date.toLocaleDateString('es-PE', { day:'2-digit', month:'short' });
 }
+
+// ════════════════════════════════════════
+// DASHBOARD DE FEEDBACKS DEL USUARIO
+// ════════════════════════════════════════
+
+window.abrirDashboardFeedback = async function () {
+  document.getElementById('modalDashboardFeedback').classList.add('show');
+  await cargarMisFeedbacks();
+};
+
+window.cerrarDashboardFeedback = function () {
+  document.getElementById('modalDashboardFeedback').classList.remove('show');
+};
+
+async function cargarMisFeedbacks() {
+  const email = window.currentUser?.email;
+  if (!email) return;
+
+  const lista = document.getElementById('misFeedbacksLista');
+  lista.innerHTML = `<div style="text-align:center; padding:32px; color:#718096;">Cargando...</div>`;
+
+  try {
+    const q    = query(
+      collection(db, 'feedback'),
+      where('usuario', '==', email),
+      orderBy('fecha', 'desc')
+    );
+    const snap = await getDocs(q);
+    const feedbacks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Actualizar resumen
+    document.getElementById('resumenTotal').textContent    = feedbacks.length;
+    document.getElementById('resumenPendiente').textContent = feedbacks.filter(f => !f.adminEstado || f.adminEstado === 'pending').length;
+    document.getElementById('resumenRevision').textContent  = feedbacks.filter(f => f.adminEstado === 'review').length;
+    document.getElementById('resumenResuelto').textContent  = feedbacks.filter(f => f.adminEstado === 'resolved').length;
+
+    if (!feedbacks.length) {
+      lista.innerHTML = `
+        <div style="text-align:center; padding:40px; color:#718096;">
+          <div style="font-size:2rem; margin-bottom:12px;">📭</div>
+          <div>Aún no has enviado ningún feedback</div>
+        </div>`;
+      return;
+    }
+
+    const tipoEmoji  = { sugerencia:'💡', bug:'🐛', pregunta:'❓', felicitacion:'⭐', otro:'📝' };
+
+    lista.innerHTML = feedbacks.map(f => {
+      const estado      = f.adminEstado || 'pending';
+      const emoji       = tipoEmoji[f.tipo] || '📝';
+      const fecha       = f.fecha?.toDate ? f.fecha.toDate().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+      const tieneNota   = f.adminNota && f.adminNota.length > 0;
+
+      // Colores y etiquetas por estado
+      const estadoConfig = {
+        pending:  { color:'#e53e3e', bg:'#fff5f5', border:'#fed7d7', label:'⏳ Pendiente',    desc:'Tu feedback está en espera de revisión.' },
+        review:   { color:'#3182ce', bg:'#ebf8ff', border:'#bee3f8', label:'🔍 En revisión',  desc:'El administrador está revisando tu feedback.' },
+        resolved: { color:'#38a169', bg:'#f0fff4', border:'#c6f6d5', label:'✅ Resuelto',     desc:'Tu feedback fue atendido.' }
+      };
+      const cfg = estadoConfig[estado] || estadoConfig.pending;
+
+      return `
+        <div style="
+          border: 1px solid ${cfg.border};
+          border-left: 4px solid ${cfg.color};
+          border-radius: 6px;
+          padding: 16px;
+          background: white;
+        ">
+          <!-- Header -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.1rem;">${emoji}</span>
+              <span style="font-weight:600; color:#2d3748; font-size:0.88rem; text-transform:capitalize;">${f.tipo || 'feedback'}</span>
+              <span style="font-size:0.72rem; color:#a0aec0;">${fecha}</span>
+            </div>
+            <span style="
+              padding: 3px 10px;
+              background: ${cfg.bg};
+              color: ${cfg.color};
+              border: 1px solid ${cfg.border};
+              border-radius: 20px;
+              font-size: 0.75rem;
+              font-weight: 600;
+            ">${cfg.label}</span>
+          </div>
+
+          <!-- Mensaje del usuario -->
+          <div style="
+            background: #f7fafc;
+            border: 1px solid #edf2f7;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 0.82rem;
+            color: #4a5568;
+            line-height: 1.5;
+            margin-bottom: ${tieneNota ? '10px' : '0'};
+          ">${f.mensaje || ''}</div>
+
+          <!-- Respuesta del admin -->
+          ${tieneNota ? `
+            <div style="
+              background: ${cfg.bg};
+              border: 1px solid ${cfg.border};
+              border-radius: 4px;
+              padding: 10px 12px;
+              font-size: 0.82rem;
+              color: #2d3748;
+              line-height: 1.5;
+            ">
+              <div style="font-weight:600; color:${cfg.color}; font-size:0.75rem; margin-bottom:5px;">
+                💬 Respuesta del administrador:
+              </div>
+              ${f.adminNota}
+            </div>
+          ` : `
+            <div style="font-size:0.75rem; color:#a0aec0; margin-top:8px; font-style:italic;">
+              ${cfg.desc}
+            </div>
+          `}
+        </div>`;
+    }).join('');
+
+  } catch (e) {
+    console.error(e);
+    lista.innerHTML = `<div style="text-align:center; padding:32px; color:#e53e3e;">Error al cargar feedbacks</div>`;
+  }
+}
