@@ -105,10 +105,12 @@
                   type="text"
                   id="fechaInput"
                   class="control-input"
-                  placeholder="03-MAR-25"
-                  oninput="renderizarTodasLasPlantillas()"
+                  placeholder="23-MAR-2026"
+                  oninput="formatearFecha(this)"
+                  maxlength="11"
                   title="Fecha de Vuelo"
-                  >
+                  autocomplete="off"
+                >
               </div>
 
               <!-- NUEVO: Campo dinámico para Número RI -->
@@ -764,6 +766,61 @@ SOFTWARE.</pre>
   <div class="modal" id="modalFeedback">
     <div class="modal-content">
       <div class="modal-header">
+      
+      <!-- Checkbox para activar adjunto -->
+      <div class="form-row" style="grid-template-columns:1fr; margin-top:12px;">
+        <label class="checkbox-label-tasa" id="labelAdjunto">
+          <input type="checkbox" id="adjuntoCheck" onchange="toggleAdjunto()">
+          <span>📎 Adjuntar imagen (captura de error, opcional)</span>
+        </label>
+      </div>
+
+      <!-- Campo de imagen, oculto por defecto -->
+      <div id="adjuntoSeccion" style="display:none; margin-top:12px;">
+        <div style="
+          border: 2px dashed #cbd5e0;
+          border-radius: 6px;
+          padding: 20px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: #f7fafc;
+        " onclick="document.getElementById('adjuntoFile').click()"
+          id="adjuntoDropZone">
+          <div style="font-size:2rem; margin-bottom:8px;">🖼️</div>
+          <div style="color:#718096; font-size:0.85rem;">
+            Haz clic para seleccionar una imagen
+          </div>
+          <div style="color:#a0aec0; font-size:0.75rem; margin-top:4px;">
+            PNG, JPG, GIF — máx. 2MB
+          </div>
+        </div>
+        <input 
+          type="file" 
+          id="adjuntoFile" 
+          accept="image/*" 
+          style="display:none;"
+          onchange="previsualizarImagen(this)"
+        >
+        <!-- Preview -->
+        <div id="adjuntoPreview" style="display:none; margin-top:12px; position:relative;">
+          <img id="adjuntoImg" style="
+            max-width:100%; 
+            max-height:200px; 
+            border-radius:6px; 
+            border:1px solid #e2e8f0;
+            object-fit: contain;
+          ">
+          <button onclick="quitarImagen()" style="
+            position:absolute; top:6px; right:6px;
+            background:#e53e3e; color:white; border:none;
+            border-radius:50%; width:24px; height:24px;
+            cursor:pointer; font-size:0.9rem; font-weight:700;
+            display:flex; align-items:center; justify-content:center;
+          ">×</button>
+          <div id="adjuntoNombre" style="font-size:0.75rem; color:#718096; margin-top:6px;"></div>
+        </div>
+      </div>
       <div class="modal-title">💬 Enviar Comentarios o Sugerencias</div>
       <div style="display:flex; gap:8px; align-items:center;">
         <!-- NUEVO botón -->

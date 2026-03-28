@@ -236,6 +236,16 @@ window.renderFeedback = function () {
           <span class="feedback-date">${fecha}</span>
         </div>
         <div class="feedback-msg">${escapeHtml(f.mensaje || '')}</div>
+        ${f.imagen ? `
+          <div style="margin: 10px 0;">
+            <div style="font-size:0.75rem; color:var(--text3); margin-bottom:6px;">📎 Imagen adjunta:</div>
+            <img src="${f.imagen}" 
+              style="max-width:100%; max-height:200px; border-radius:6px; border:1px solid var(--border); cursor:pointer; object-fit:contain;"
+              onclick="verImagenCompleta('${f.id}')"
+              title="Clic para ver completa"
+            >
+          </div>
+        ` : ''}
         ${nota ? `<div class="feedback-note-display">📌 Nota: ${escapeHtml(nota)}</div>` : ''}
         <div class="feedback-actions">
           <input type="text" class="feedback-note-input" id="nota-${f.id}"
@@ -247,6 +257,26 @@ window.renderFeedback = function () {
         </div>
       </div>`;
   }).join('');
+};
+
+window.verImagenCompleta = function(id) {
+  const f = allFeedback.find(x => x.id === id);
+  if (!f?.imagen) return;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed; inset:0; background:rgba(0,0,0,0.85);
+    z-index:99999; display:flex; align-items:center; 
+    justify-content:center; cursor:zoom-out;
+  `;
+  overlay.innerHTML = `
+    <img src="${f.imagen}" style="
+      max-width:90vw; max-height:90vh; 
+      border-radius:8px; object-fit:contain;
+    ">
+  `;
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
 };
 
 window.cambiarEstadoFeedback = async function (id, estado) {

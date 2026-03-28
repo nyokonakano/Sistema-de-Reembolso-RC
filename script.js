@@ -942,16 +942,22 @@ function renderizarTasas() {
                 <span class="tasa-comentario-icon">💬</span>
                 ${comentarioCorto}
                 ${tasa.comentario.length > 50 ? `
-                  <button class="ver-comentario-btn" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})'>
-                    Ver más
+                  <button class="ver-comentario-btn" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Ver Comentario">💭
                   </button>
                 ` : ''}
+                <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar">✏️</button>
+                <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')">🗑️</button>
               </div>
             ` : ''}
           </div>
           <div class="tasa-actions">
-            <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar" style="padding: 6px 10px; background: #edf2f7; color: #4a5568;">✏️</button>
-            <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')" title="Eliminar">🗑️</button>
+          ${tieneComentario ? `
+            <button class="btn-ver-comentario" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Ver comentario">
+              💬
+            </button>
+          ` : ''}
+          <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar">✏️</button>
+          <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')">🗑️</button>
           </div>
         </div>
       `;
@@ -1636,41 +1642,26 @@ function limpiarTodosCampos() {
 }
 
 // Deshacer limpieza completa (incluyendo calculadora y PE)
-function deshacerLimpiezaCompleta() {
-  // Restaurar campos principales
-  document.getElementById('rutaInput').value = camposGuardados.ruta;
-  document.getElementById('fechaInput').value = camposGuardados.fecha;
-  document.getElementById('numeroRIInput').value = camposGuardados.numeroRI;
-  document.getElementById('searchPlantillas').value = camposGuardados.searchPlantillas;
-  document.getElementById('searchTasas').value = camposGuardados.searchTasas;
-  
-  // Restaurar calculadora
-  if (camposGuardados.calculadoraGrupos) {
-    camposGuardados.calculadoraGrupos.forEach(grupo => {
-      const textarea = document.getElementById(`calcGrupo${grupo.id}`);
-      if (textarea) {
-        textarea.value = grupo.valor;
-      }
-    });
-    if (typeof calcularTotales === 'function') calcularTotales();
-  }
-  
-  // Restaurar PE
-  const peFare = document.getElementById('peFare');
-  const peYR = document.getElementById('peYR');
-  const peIGV = document.getElementById('peIGV');
-  
-  if (peFare) peFare.value = camposGuardados.peFare;
-  if (peYR) peYR.value = camposGuardados.peYR;
-  if (peIGV) peIGV.value = camposGuardados.peIGV;
-  
-  if (typeof calcularPE === 'function') calcularPE();
-  
-  // Re-renderizar
-  renderizarTodasLasPlantillas();
-  filtrarTasas();
-  
-  mostrarNotificacion('↩️ Todo restaurado');
+function mostrarNotificacionConUndo(mensaje, undoCallback) {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `
+    <span>${mensaje}</span>
+    <button class="undo-btn" id="undoActionBtn">↩️ Deshacer</button>
+  `;
+  toast.classList.add('show', 'with-undo');
+
+  // Vincular el callback directamente al botón
+  document.getElementById('undoActionBtn').addEventListener('click', function() {
+    undoCallback();
+    toast.classList.remove('show', 'with-undo');
+    toast.innerHTML = 'Texto copiado';
+  });
+
+  clearTimeout(window._undoTimer);
+  window._undoTimer = setTimeout(() => {
+    toast.classList.remove('show', 'with-undo');
+    toast.innerHTML = 'Texto copiado';
+  }, 5000);
 }
 
 function deshacerLimpieza() {
@@ -2122,12 +2113,13 @@ Idioma: ${navigator.language}
       mensaje:      mensaje,
       usuario:      window.currentUser ? window.currentUser.email : 'anónimo',
       paraUsuario:  window.currentUser ? window.currentUser.email : '',
+      imagen:       imagenAdjunta || null,
       infoTecnica:  incluirInfo ? infoTecnica : null,
       fecha:        new Date(),
       enviado:      false,
       leido:        false
     });
-    
+        
     // 2. Preparar parámetros para EmailJS
     const templateParams = {
       to_email: 'jack.theripe@outlook.com',
@@ -2203,6 +2195,11 @@ Idioma: ${navigator.language}
     btn.disabled = false;
     btn.textContent = '📤 Reintentar';
   }
+
+  // Limpiar imagen adjunta
+  quitarImagen();
+  document.getElementById('adjuntoCheck').checked = false;
+  toggleAdjunto();
 };
 
 function mostrarFeedbackStatus(mensaje, tipo) {
@@ -2465,3 +2462,81 @@ async function cargarMisFeedbacks() {
     lista.innerHTML = `<div style="text-align:center; padding:32px; color:#e53e3e;">Error al cargar feedbacks</div>`;
   }
 }
+
+
+// FORMATEAR FECHA EN PLANTILLAS
+window.formatearFecha = function(input) {
+  // Guardar posición del cursor
+  let valor = input.value.toUpperCase();
+
+  // Eliminar todo lo que no sea letra o número
+  valor = valor.replace(/[^A-Z0-9]/g, '');
+
+  // Aplicar formato DD-MMM-YYYY progresivamente
+  let resultado = '';
+
+  if (valor.length <= 2) {
+    // Solo día: "23"
+    resultado = valor;
+  } else if (valor.length <= 5) {
+    // Día + inicio de mes: "23MAR"
+    resultado = valor.slice(0, 2) + '-' + valor.slice(2);
+  } else {
+    // Día + mes + año: "23-MAR-2026"
+    resultado = valor.slice(0, 2) + '-' + valor.slice(2, 5) + '-' + valor.slice(5, 9);
+  }
+
+  input.value = resultado;
+  renderizarTodasLasPlantillas();
+};
+
+
+// Variable global para la imagen
+let imagenAdjunta = null;
+
+window.toggleAdjunto = function() {
+  const check   = document.getElementById('adjuntoCheck');
+  const seccion = document.getElementById('adjuntoSeccion');
+  seccion.style.display = check.checked ? 'block' : 'none';
+  if (!check.checked) quitarImagen();
+};
+
+window.previsualizarImagen = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Validar tamaño (2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    mostrarNotificacion('❌ La imagen no puede superar 2MB');
+    input.value = '';
+    return;
+  }
+
+  // Validar tipo
+  if (!file.type.startsWith('image/')) {
+    mostrarNotificacion('❌ Solo se permiten imágenes');
+    input.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    imagenAdjunta = e.target.result; // base64
+
+    // Mostrar preview
+    document.getElementById('adjuntoImg').src       = imagenAdjunta;
+    document.getElementById('adjuntoNombre').textContent = `📎 ${file.name} (${(file.size/1024).toFixed(1)}KB)`;
+    document.getElementById('adjuntoPreview').style.display = 'block';
+    document.getElementById('adjuntoDropZone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+};
+
+window.quitarImagen = function() {
+  imagenAdjunta = null;
+  document.getElementById('adjuntoFile').value        = '';
+  document.getElementById('adjuntoImg').src           = '';
+  document.getElementById('adjuntoPreview').style.display  = 'none';
+  document.getElementById('adjuntoDropZone').style.display = 'block';
+  document.getElementById('adjuntoNombre').textContent = '';
+};
