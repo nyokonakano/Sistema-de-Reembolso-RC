@@ -1650,7 +1650,6 @@ function mostrarNotificacionConUndo(mensaje, undoCallback) {
   `;
   toast.classList.add('show', 'with-undo');
 
-  // Vincular el callback directamente al botón
   document.getElementById('undoActionBtn').addEventListener('click', function() {
     undoCallback();
     toast.classList.remove('show', 'with-undo');
@@ -1675,21 +1674,6 @@ function deshacerLimpieza() {
   filtrarTasas();
   
   mostrarNotificacion('↩️ Cambios revertidos');
-}
-
-// Notificación con botón de Undo
-function mostrarNotificacionConUndo(mensaje, undoCallback) {
-  const toast = document.getElementById('toast');
-  toast.innerHTML = `
-    <span>${mensaje}</span>
-    <button class="undo-btn" onclick="undoCallback()">↩️ Deshacer</button>
-  `;
-  toast.classList.add('show', 'with-undo');
-  
-  setTimeout(() => {
-    toast.classList.remove('show', 'with-undo');
-    toast.innerHTML = 'Texto copiado';
-  }, 5000);
 }
 
 // Funciones del modal de licencia
