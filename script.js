@@ -2113,7 +2113,7 @@ Idioma: ${navigator.language}
       mensaje:      mensaje,
       usuario:      window.currentUser ? window.currentUser.email : 'anónimo',
       paraUsuario:  window.currentUser ? window.currentUser.email : '',
-      imagen:       imagenAdjunta || null,
+      imagen:       window.imagenAdjunta || null,
       infoTecnica:  incluirInfo ? infoTecnica : null,
       fecha:        new Date(),
       enviado:      false,
@@ -2196,10 +2196,10 @@ Idioma: ${navigator.language}
     btn.textContent = '📤 Reintentar';
   }
 
-  // Limpiar imagen adjunta
-  quitarImagen();
+  // Al limpiar al final de enviarFeedback:
+  window.quitarImagen();
   document.getElementById('adjuntoCheck').checked = false;
-  toggleAdjunto();
+  window.toggleAdjunto();
 };
 
 function mostrarFeedbackStatus(mensaje, tipo) {
@@ -2491,28 +2491,26 @@ window.formatearFecha = function(input) {
 };
 
 
-// Variable global para la imagen
-let imagenAdjunta = null;
+// Variable global accesible desde fuera del módulo
+window.imagenAdjunta = null;
 
 window.toggleAdjunto = function() {
   const check   = document.getElementById('adjuntoCheck');
   const seccion = document.getElementById('adjuntoSeccion');
   seccion.style.display = check.checked ? 'block' : 'none';
-  if (!check.checked) quitarImagen();
+  if (!check.checked) window.quitarImagen();
 };
 
 window.previsualizarImagen = function(input) {
   const file = input.files[0];
   if (!file) return;
 
-  // Validar tamaño (2MB)
   if (file.size > 2 * 1024 * 1024) {
     mostrarNotificacion('❌ La imagen no puede superar 2MB');
     input.value = '';
     return;
   }
 
-  // Validar tipo
   if (!file.type.startsWith('image/')) {
     mostrarNotificacion('❌ Solo se permiten imágenes');
     input.value = '';
@@ -2521,22 +2519,26 @@ window.previsualizarImagen = function(input) {
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    imagenAdjunta = e.target.result; // base64
+    window.imagenAdjunta = e.target.result; // base64
 
-    // Mostrar preview
-    document.getElementById('adjuntoImg').src       = imagenAdjunta;
+    document.getElementById('adjuntoImg').src            = window.imagenAdjunta;
     document.getElementById('adjuntoNombre').textContent = `📎 ${file.name} (${(file.size/1024).toFixed(1)}KB)`;
-    document.getElementById('adjuntoPreview').style.display = 'block';
+    document.getElementById('adjuntoPreview').style.display  = 'block';
     document.getElementById('adjuntoDropZone').style.display = 'none';
   };
   reader.readAsDataURL(file);
 };
 
 window.quitarImagen = function() {
-  imagenAdjunta = null;
-  document.getElementById('adjuntoFile').value        = '';
-  document.getElementById('adjuntoImg').src           = '';
-  document.getElementById('adjuntoPreview').style.display  = 'none';
-  document.getElementById('adjuntoDropZone').style.display = 'block';
-  document.getElementById('adjuntoNombre').textContent = '';
+  window.imagenAdjunta = null;
+  const fileInput = document.getElementById('adjuntoFile');
+  if (fileInput) fileInput.value = '';
+  const img = document.getElementById('adjuntoImg');
+  if (img) img.src = '';
+  const preview = document.getElementById('adjuntoPreview');
+  if (preview) preview.style.display = 'none';
+  const dropZone = document.getElementById('adjuntoDropZone');
+  if (dropZone) dropZone.style.display = 'block';
+  const nombre = document.getElementById('adjuntoNombre');
+  if (nombre) nombre.textContent = '';
 };
