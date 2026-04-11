@@ -189,33 +189,39 @@ async function verificarRolAdmin(email) {
 
 // Auth State Observer
 onAuthStateChanged(auth, async (user) => {
-    document.getElementById('loadingContainer').style.display = 'none';
+  document.getElementById('loadingContainer').style.display = 'none';
+
+  if (user) {
+    window.currentUser = user;
+    document.getElementById('authContainer').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'block';
+    document.getElementById('userEmail').textContent = user.email;
+
+    // Primero cargar datos
+    await cargarDatosFirebase();
     
-    if (user) {
-      iniciarNotificaciones(user.email);
+    // Luego operaciones secundarias en paralelo (sin await individual)
+    Promise.all([
+      actualizarPresencia(user.email, true),
+      registrarAudit('login', 'Inició sesión en el sistema'),
+      verificarRolAdmin(user.email)
+    ]);
 
-      await registrarAudit('login', 'Inició sesión en el sistema');
-      
-      window.currentUser = user;
-      document.getElementById('authContainer').style.display = 'none';
-      document.getElementById('appContainer').style.display = 'block';
-      document.getElementById('userEmail').textContent = user.email;
-      
-      await actualizarPresencia(window.currentUser.email, true);
-      window.addEventListener('beforeunload', () => {
-        actualizarPresencia(window.currentUser.email, false);
-      });
+    // Iniciar notificaciones al final
+    iniciarNotificaciones(user.email);
 
-      await cargarDatosFirebase();
-      verificarRolAdmin(user.email);
-      generarCE2();
-      renderizarTodasLasPlantillas();
-    } else {
-      
-      window.currentUser = null;
-      document.getElementById('authContainer').style.display = 'block';
-      document.getElementById('appContainer').style.display = 'none';
-    }
+    generarCE2();
+    renderizarTodasLasPlantillas();
+
+    window.addEventListener('beforeunload', () => {
+      actualizarPresencia(user.email, false);
+    });
+
+  } else {
+    window.currentUser = null;
+    document.getElementById('authContainer').style.display = 'block';
+    document.getElementById('appContainer').style.display = 'none';
+  }
 });
 
 // FIRESTORE FUNCTIONS
@@ -942,22 +948,21 @@ function renderizarTasas() {
                 <span class="tasa-comentario-icon">💬</span>
                 ${comentarioCorto}
                 ${tasa.comentario.length > 50 ? `
-                  <button class="ver-comentario-btn" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Ver Comentario">💭
+                  <button class="ver-comentario-btn" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})'>
+                    Ver más
                   </button>
                 ` : ''}
-                <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar">✏️</button>
-                <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')">🗑️</button>
               </div>
             ` : ''}
           </div>
           <div class="tasa-actions">
-          ${tieneComentario ? `
-            <button class="btn-ver-comentario" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Ver comentario">
-              💬
-            </button>
-          ` : ''}
-          <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar">✏️</button>
-          <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')">🗑️</button>
+            ${tieneComentario ? `
+              <button class="btn-ver-comentario" onclick='verComentarioCompleto(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Ver comentario">
+                💬
+              </button>
+            ` : ''}
+            <button class="edit-template-btn" onclick='abrirModalEditarTasa(${JSON.stringify(tasa).replace(/'/g, "&apos;")})' title="Editar">✏️</button>
+            <button class="delete-btn" onclick="eliminarTasa('${tasa.id}')">🗑️</button>
           </div>
         </div>
       `;
@@ -1349,29 +1354,25 @@ function mostrarNotificacion(mensaje) {
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', function(){
-    document.getElementById('rutaInput').addEventListener('input', renderizarTodasLasPlantillas);
-    document.getElementById('fechaInput').addEventListener('input', renderizarTodasLasPlantillas);
-    document.getElementById('numeroRIInput').addEventListener('input', renderizarTodasLasPlantillas);
-    
-    rutaInput.addEventListener('input', function() {
-        actualizarPreviewRuta();
-        renderizarTodasLasPlantillas();
-    });
-    
-    document.getElementById('fechaInput').addEventListener('input', renderizarTodasLasPlantillas);
-    
-    document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            agregarTasa();
-        }
-    });
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('rutaInput').addEventListener('input', function() {
+    actualizarPreviewRuta();
+    renderizarTodasLasPlantillas();
+  });
 
-    document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            login();
-        }
-    });
+  document.getElementById('fechaInput').addEventListener('input', renderizarTodasLasPlantillas);
+  document.getElementById('numeroRIInput').addEventListener('input', renderizarTodasLasPlantillas);
+
+  document.getElementById('montoTasaInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') agregarTasa();
+  });
+
+  document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') login();
+  });
+
+  const peIGV = document.getElementById('peIGV');
+  if (peIGV) calcularPE();
 });
 
 // DRAG & DROP PARA PLANTILLAS
